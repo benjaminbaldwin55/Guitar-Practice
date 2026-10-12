@@ -4,6 +4,7 @@
 /*
   Gig poster palette: hot yellow paper, black ink, tomato red.
   live is for live states only (tuner on, recording).
+  good is for success states (in tune, new personal best).
   Player colors: Ben blue, Anna purple, together red.
 */
 :root {
@@ -18,6 +19,7 @@
   --action-hi: #ff5a47;
   --action-ink: #000000;
   --live: #ff3d2e;
+  --good: #05722c;
   --ben: #2557ff;
   --anna: #9b3df5;
   --both: #ff3d2e;
@@ -40,6 +42,7 @@
   --color-action-hi: var(--action-hi);
   --color-action-ink: var(--action-ink);
   --color-live: var(--live);
+  --color-good: var(--good);
   --color-ben: var(--ben);
   --color-anna: var(--anna);
   --color-both: var(--both);

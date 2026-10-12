@@ -5,12 +5,18 @@ export type Who = PlayerId | "both";
 
 export type Feel = "rough" | "ok" | "good" | "great";
 
+export type BlockKind = "warmup" | "due" | "edge" | "song" | "fun" | "break";
+
 export interface SessionBlock {
-  kind: "warmup" | "due" | "edge" | "song" | "fun";
+  kind: BlockKind;
   title: string;
   plannedMin: number;
   done: boolean;
+  /** What the block was, e.g. "changes:Em-G" or "strum:campfire". Used to vary future sessions. */
+  ref?: string;
 }
+
+export type Energy = "low" | "normal" | "high";
 
 export interface PracticeSession {
   id: string;

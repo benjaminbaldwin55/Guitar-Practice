@@ -31,7 +31,8 @@ then.
 |---|---|
 | `me/` | Who we are: profiles, coaching notes, songs. The coach reads these. |
 | `src/app/` | The app's screens |
-| `src/lib/` | Logic: data storage, streaks, backups |
+| `src/content/` | Lesson content: chord path, drills, strums, scales, warm-ups |
+| `src/lib/` | Logic: session builder, audio (tuner, metronome, strum counter), storage |
 | `legacy/` | The old April 2026 app, kept for reference |
 
 ## Commands
@@ -46,7 +47,7 @@ then.
 ## Build plan
 
 - [x] **Phase 0: Setup.** App shell, `/me` profiles, local saving, backup
-- [ ] **Phase 1: Usable app.** Tuner, metronome, warm-ups, session builder, logging, streaks
+- [x] **Phase 1: Usable app.** Tuner, metronome, warm-ups, session builder, chord-change counter, logging
 - [ ] **Phase 2: Progress engine.** Skill tree, measured drills, song milestones, stats
 - [ ] **Phase 3: Together.** Duet mode, shared goals, recordings, ear training
 - [ ] **Phase 4: Extras.** Drum machine, tone presets, weekly coach review

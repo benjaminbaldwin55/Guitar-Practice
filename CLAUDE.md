@@ -33,6 +33,20 @@ vary every session, keep a milestone 1 or 2 sessions away, measure things.
   before then.
 - Run `npm test`, `npm run lint`, `npm run build` before committing.
 
+## How practice works
+- `src/lib/session/builder.ts` builds each session: warm-up, the weakest open
+  chord change (measured), one or two rotating blocks (strum, scale,
+  progression), and a fun finish. It avoids refs used in recent sessions.
+- `src/content/chord-path.ts` is the learning path. Two chord pairs open on
+  day one; every pair that reaches 20 changes/min opens the next.
+- Measurements: `chord-changes` (subject = pair id like `Em-G`, counted by
+  the mic strum detector, editable after) and `clean-bpm` (subject = block
+  ref like `strum:campfire`, from the "Nailed it" button).
+- Together sessions plan around the weaker player's scores and take turns
+  on measured drills (one mic can't tell two guitars apart).
+- If the last session was marked "something hurt", the next one defaults
+  to 10 minutes, low energy.
+
 ## Design tokens (src/app/globals.css)
 Gig poster look, chosen by Ben and Anna: hot yellow `--bg`, black `--ink`,
 tomato red `--action`, thick black lines (`--bw`). `--live` only for live
