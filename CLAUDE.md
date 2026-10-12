@@ -92,6 +92,11 @@ bubblegum `--action`, player colors Ben blue raspberry `--ben`, Anna grape
 stickers and hard offset shadows that glow pink (`.candy`, `.candy-sm`,
 `.press`, `--shadow-c`). Archivo, wide and heavy (`.display`), for names and
 big numbers only. Bold, not busy: no gradients, no extra decoration.
+- Progress bars: always `<CandyBar>` (striped candy stick, glossy top).
+- Icons: `src/components/icons.tsx`, one stroke style; add new ones there.
+- Achievement stickers: shape per group (pick, rounded square, dial,
+  hexagon, heart, starburst) + icon (`iconFor` in sticker.tsx) + number
+  tag. New achievements need an icon mapping.
 
 ## Style for copy
 Casual and plain. No em dashes.

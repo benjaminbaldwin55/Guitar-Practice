@@ -3,6 +3,7 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { useApp } from "@/components/app-provider";
+import { CandyBar } from "@/components/candy-bar";
 import { WeekDots } from "@/components/week-dots";
 import { PLAYERS, whoLabel } from "@/lib/players";
 import {
@@ -26,6 +27,14 @@ const OPTIONS: { who: Who; color: string; on: string; sub: string }[] = [
   { who: "both", color: "var(--both)", on: "var(--on-both)", sub: "Together" },
 ];
 
+function timeOfDay(d: Date): string {
+  const h = d.getHours();
+  if (h < 5) return "this late";
+  if (h < 12) return "this morning";
+  if (h < 17) return "this afternoon";
+  return "tonight";
+}
+
 export default function Home() {
   const { settings, setActiveWho, ready } = useApp();
   const sessions = useSessions() ?? [];
@@ -39,7 +48,7 @@ export default function Home() {
 
   return (
     <div>
-      <h1 className="text-lg text-ink-dim">Who&apos;s playing?</h1>
+      <h1 className="display text-[clamp(2.25rem,5vw,3.75rem)]">Who&apos;s playing {timeOfDay(now)}?</h1>
 
       <ul className="mt-6 border-t-(length:--bw) border-line">
         {OPTIONS.map(({ who, color, on, sub }) => {
@@ -86,12 +95,14 @@ export default function Home() {
                   <span className="mt-3 block text-sm text-ink-faint">{sub}</span>
                   {unlock && (
                     <span className="mt-2 flex items-center gap-3 text-sm font-semibold">
-                      <span className="h-2 w-28 overflow-hidden rounded-full border-2 border-current">
-                        <span
-                          className="block h-full bg-current"
-                          style={{ width: `${(unlock.best / UNLOCK_AT) * 100}%` }}
-                        />
-                      </span>
+                      <CandyBar
+                        value={unlock.best}
+                        max={UNLOCK_AT}
+                        color={selected ? on : color}
+                        track={selected ? "rgb(255 255 255 / 0.4)" : undefined}
+                        className="w-32"
+                        label="Progress to the next chord unlock"
+                      />
                       {unlock.pair[0]} ⇄ {unlock.pair[1]}: {unlock.best} of {UNLOCK_AT} to unlock {unlock.opens[0]} ⇄{" "}
                       {unlock.opens[1]}
                     </span>

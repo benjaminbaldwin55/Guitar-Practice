@@ -476,7 +476,7 @@ export default function PracticePage() {
         {blocks.map((b, i) => (
           <li
             key={i}
-            className={`h-3 rounded-full border-2 border-ink ${i < idx ? "bg-ink" : i === idx ? "bg-action" : ""}`}
+            className={`h-3.5 rounded-full border-2 border-ink ${i < idx ? "bg-action" : i === idx ? "candy-stripes bg-action" : "bg-surface-2"}`}
             style={{ flexGrow: b.plannedMin }}
             title={b.title}
           />

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useApp } from "@/components/app-provider";
+import { CandyBar } from "@/components/candy-bar";
 import { Sticker } from "@/components/sticker";
 import { Chip, PageTitle } from "@/components/ui";
 import { closest, GROUPS, type AchievementState, type Owner } from "@/lib/achievements";
@@ -22,7 +23,7 @@ function Card({ s, owner }: { s: AchievementState; owner: Owner }) {
   const { def, unlocked, value, at } = s;
   return (
     <li className="flex items-center gap-4">
-      <Sticker state={s} color={color} on={on} />
+      <Sticker state={s} color={color} on={on} size={92} />
       <div className="min-w-0 flex-1">
         <h3 className={`text-lg leading-tight font-bold ${unlocked ? "" : "text-ink-dim"}`}>{def.title}</h3>
         <p className={`text-sm ${unlocked ? "text-ink-dim" : "text-ink-faint"}`}>{def.desc}</p>
@@ -30,9 +31,7 @@ function Card({ s, owner }: { s: AchievementState; owner: Owner }) {
         {!unlocked && def.future && <p className="mt-1 text-xs font-semibold text-ink-faint">{def.future}</p>}
         {!unlocked && !def.future && def.target > 1 && (
           <div className="mt-1.5 flex items-center gap-2 text-xs text-ink-dim">
-            <span className="h-1.5 w-24 overflow-hidden rounded-full bg-surface-2">
-              <span className="block h-full bg-ink" style={{ width: `${(value / def.target) * 100}%` }} />
-            </span>
+            <CandyBar value={value} max={def.target} color={ownerColor(owner).color} size="sm" className="w-28" />
             <span className="num">
               {value} / {def.target}
             </span>

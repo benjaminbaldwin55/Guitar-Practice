@@ -7,6 +7,7 @@ import { useChangeCounter } from "@/lib/audio/use-change-counter";
 import { PLAYERS } from "@/lib/players";
 import type { PlayerId } from "@/lib/types";
 import type { Bests } from "@/lib/use-measurements";
+import { CandyBar } from "./candy-bar";
 import { ChordDiagram } from "./chord-diagram";
 import { Button } from "./ui";
 
@@ -239,9 +240,7 @@ export function ChangeCounter({
           <div className={big} style={{ color }}>
             {counter.mic === "on" ? counter.count : "?"}
           </div>
-          <div className="mx-auto mt-4 h-4 max-w-xl overflow-hidden rounded-(--r) border-(length:--bw) border-ink">
-            <div className="h-full bg-ink transition-[width] duration-200" style={{ width: `${(left / SECONDS) * 100}%` }} />
-          </div>
+          <CandyBar value={left} max={SECONDS} color={color} size="lg" className="mx-auto mt-4 max-w-xl" label="Time left" />
           <p className="num mt-2 text-lg font-semibold">{left}s</p>
           {counter.mic === "on" && <MicMeter level={counter.level} />}
           <Button className="mt-4" variant="ghost" onClick={finish}>
