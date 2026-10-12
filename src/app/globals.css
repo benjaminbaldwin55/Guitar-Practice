@@ -1,0 +1,81 @@
+@import "@fontsource-variable/archivo/standard.css";
+@import "tailwindcss";
+
+/*
+  Palette
+  rosewood  fretboard dark, the base
+  pearl     inlay dots, primary text
+  brass     nickel frets, actions and focus
+  jewel     amp jewel light, live states only (tuner on, recording)
+  denim     Ben
+  burst     Anna (her Schecter's purple burst)
+*/
+:root {
+  --rosewood: #231814;
+  --rosewood-2: #2e211b;
+  --rosewood-3: #3b2b23;
+  --line: #4a372d;
+  --pearl: #ede5d3;
+  --pearl-dim: #b8ab95;
+  --pearl-faint: #8a7c68;
+  --brass: #c8a25a;
+  --brass-hi: #ddb96f;
+  --jewel: #e0473b;
+  --ben: #7fa3cf;
+  --anna: #b78ad6;
+}
+
+@theme inline {
+  --color-rosewood: var(--rosewood);
+  --color-rosewood-2: var(--rosewood-2);
+  --color-rosewood-3: var(--rosewood-3);
+  --color-line: var(--line);
+  --color-pearl: var(--pearl);
+  --color-pearl-dim: var(--pearl-dim);
+  --color-pearl-faint: var(--pearl-faint);
+  --color-brass: var(--brass);
+  --color-brass-hi: var(--brass-hi);
+  --color-jewel: var(--jewel);
+  --color-ben: var(--ben);
+  --color-anna: var(--anna);
+  --font-sans: "Archivo Variable", ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--rosewood);
+  color: var(--pearl);
+  font-family: var(--font-sans);
+  font-feature-settings: "tnum" 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Wide, heavy Archivo for names and big numbers. */
+.display {
+  font-stretch: 125%;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 0.9;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
