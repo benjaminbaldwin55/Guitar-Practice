@@ -86,3 +86,12 @@ body {
     transition: none !important;
   }
 }
+
+/* Flip ink and paper inside a box, e.g. the chord the app hears. */
+.flip-ink {
+  --ink: #ffe03d;
+  --ink-dim: #fff4b8;
+  --bg: #000000;
+  background: #000000;
+  color: #ffe03d;
+}

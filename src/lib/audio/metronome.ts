@@ -8,11 +8,24 @@ export interface Tick {
   sub: number; // 0-based subdivision within the beat
 }
 
+/** How each beat in the bar sounds. Tap a beat in the UI to cycle these. */
+export type BeatSound = "accent" | "normal" | "soft" | "off";
+export const BEAT_CYCLE: BeatSound[] = ["accent", "normal", "soft", "off"];
+
+export type Voice = "click" | "wood" | "hat" | "cowbell";
+
 export interface MetronomeOptions {
   bpm: number;
   beatsPerBar: number;
   subdivision: Subdivision;
-  accent: boolean;
+  /** One entry per beat. Its length always matches beatsPerBar. */
+  beats: BeatSound[];
+  voice: Voice;
+}
+
+/** Resize a beat pattern, keeping what's there and filling with plain beats. */
+export function fitBeats(beats: BeatSound[], n: number): BeatSound[] {
+  return Array.from({ length: n }, (_, i) => beats[i] ?? (i === 0 ? "accent" : "normal"));
 }
 
 export const MIN_BPM = 30;
@@ -65,6 +78,13 @@ export class Metronome {
   set(patch: Partial<MetronomeOptions>): void {
     this.opts = { ...this.opts, ...patch };
     if (patch.bpm !== undefined) this.opts.bpm = clampBpm(patch.bpm);
+    this.opts.beats = fitBeats(this.opts.beats, this.opts.beatsPerBar);
+  }
+
+  /** Play one beat right now, so you can hear a sound while choosing it. */
+  async preview(sound: BeatSound, voice: Voice = this.opts.voice): Promise<void> {
+    const ctx = await getAudioContext();
+    playVoice(ctx, ctx.currentTime + 0.01, voice, sound, false);
   }
 
   private schedule(): void {
@@ -104,21 +124,88 @@ export class Metronome {
   }
 
   private click(ctx: AudioContext, when: number, t: Tick): void {
-    const down = t.beat === 0 && t.sub === 0 && this.opts.accent;
-    const onBeat = t.sub === 0;
-    const freq = down ? 1600 : onBeat ? 1100 : 750;
-    const vol = down ? 0.5 : onBeat ? 0.32 : 0.16;
-
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "square";
-    osc.frequency.value = freq;
-    gain.gain.setValueAtTime(vol, when);
-    gain.gain.exponentialRampToValueAtTime(0.0001, when + 0.04);
-    osc.connect(gain).connect(ctx.destination);
-    osc.start(when);
-    osc.stop(when + 0.05);
+    const sound = this.opts.beats[t.beat] ?? "normal";
+    if (sound === "off") return;
+    const sub = t.sub !== 0;
+    playVoice(ctx, when, this.opts.voice, sub ? "soft" : sound, sub);
   }
+}
+
+const noiseBuffers = new WeakMap<BaseAudioContext, AudioBuffer>();
+function noise(ctx: BaseAudioContext): AudioBuffer {
+  let b = noiseBuffers.get(ctx);
+  if (!b) {
+    b = ctx.createBuffer(1, ctx.sampleRate * 0.3, ctx.sampleRate);
+    const d = b.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    noiseBuffers.set(ctx, b);
+  }
+  return b;
+}
+
+const VOL: Record<Exclude<BeatSound, "off">, number> = { accent: 0.55, normal: 0.32, soft: 0.14 };
+
+/** Synthesized click voices. All built from oscillators and noise, no samples. */
+function playVoice(ctx: AudioContext, when: number, voice: Voice, sound: BeatSound, sub: boolean): void {
+  if (sound === "off") return;
+  const vol = VOL[sound] * (sub ? 0.7 : 1);
+  const out = ctx.createGain();
+  out.connect(ctx.destination);
+
+  if (voice === "hat") {
+    // Closed hi-hat; the accent opens it up a little.
+    const src = ctx.createBufferSource();
+    src.buffer = noise(ctx);
+    const hp = ctx.createBiquadFilter();
+    hp.type = "highpass";
+    hp.frequency.value = 7000;
+    const len = sound === "accent" ? 0.14 : 0.045;
+    out.gain.setValueAtTime(vol, when);
+    out.gain.exponentialRampToValueAtTime(0.0001, when + len);
+    src.connect(hp).connect(out);
+    src.start(when);
+    src.stop(when + len + 0.02);
+    return;
+  }
+
+  if (voice === "cowbell") {
+    const bp = ctx.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.value = 800;
+    bp.Q.value = 3;
+    bp.connect(out);
+    for (const f of [540, 800]) {
+      const o = ctx.createOscillator();
+      o.type = "square";
+      o.frequency.value = sound === "accent" ? f * 1.06 : f;
+      o.connect(bp);
+      o.start(when);
+      o.stop(when + 0.16);
+    }
+    out.gain.setValueAtTime(vol * 1.4, when);
+    out.gain.exponentialRampToValueAtTime(0.0001, when + 0.15);
+    return;
+  }
+
+  const o = ctx.createOscillator();
+  if (voice === "wood") {
+    // Woodblock: a short sine with a quick pitch drop.
+    const f = sound === "accent" ? 1300 : sound === "normal" ? 950 : 800;
+    o.type = "sine";
+    o.frequency.setValueAtTime(f * 1.3, when);
+    o.frequency.exponentialRampToValueAtTime(f, when + 0.015);
+    out.gain.setValueAtTime(vol * 1.5, when);
+    out.gain.exponentialRampToValueAtTime(0.0001, when + 0.06);
+  } else {
+    const f = sound === "accent" ? 1600 : sound === "normal" ? 1100 : 800;
+    o.type = "square";
+    o.frequency.value = f;
+    out.gain.setValueAtTime(vol, when);
+    out.gain.exponentialRampToValueAtTime(0.0001, when + 0.04);
+  }
+  o.connect(out);
+  o.start(when);
+  o.stop(when + 0.08);
 }
 
 /** Average BPM from tap timestamps (ms). Ignores taps older than 3s. */

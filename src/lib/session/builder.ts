@@ -9,14 +9,15 @@ import { SCALES } from "@/content/scales";
 import { STRUMS } from "@/content/strums";
 import { WARMUPS, type WarmupStep } from "@/content/warmups";
 import type { Energy, PlayerId, SessionBlock } from "../types";
+import { nextStartBpm, type TempoRun } from "../tempo";
 import { pick, rng, shuffle } from "./rng";
 
 export type Payload =
   | { type: "warmup"; steps: WarmupStep[] }
   | { type: "changes"; pair: [string, string]; best: number | null; goal: number | null }
-  | { type: "strum"; patternId: string; chords: string[]; bpm: number }
-  | { type: "scale"; scaleId: string; bpm: number; exercise: string }
-  | { type: "progression"; prog: Progression; bpm: number }
+  | { type: "strum"; patternId: string; chords: string[]; bpm: number; last?: TempoRun }
+  | { type: "scale"; scaleId: string; bpm: number; exercise: string; last?: TempoRun }
+  | { type: "progression"; prog: Progression; bpm: number; last?: TempoRun }
   | { type: "fun"; idea: FunIdea }
   | { type: "break" };
 
@@ -34,7 +35,25 @@ export interface BuildInput {
   bests: Partial<Record<PlayerId, Record<string, number>>>;
   /** Block refs from recent sessions, most recent first. */
   recentRefs: string[];
+  /** Last tempo run per player per block ref, for picking today's starting tempo. */
+  tempos?: Partial<Record<PlayerId, Record<string, TempoRun>>>;
   seed: number;
+}
+
+/**
+ * Today's starting tempo for a drill: halfway between last time's start and
+ * last time's fastest clean run. Together, go with whoever needs it slower.
+ */
+export function startTempo(
+  ref: string,
+  players: PlayerId[],
+  tempos: BuildInput["tempos"],
+  fallback: number,
+): { bpm: number; last?: TempoRun } {
+  const runs = players.map((p) => tempos?.[p]?.[ref]).filter(Boolean) as TempoRun[];
+  if (!runs.length) return { bpm: fallback };
+  const pick = runs.reduce((a, b) => (nextStartBpm(b) < nextStartBpm(a) ? b : a));
+  return { bpm: nextStartBpm(pick), last: pick };
 }
 
 const SCALE_EXERCISES = [
@@ -95,10 +114,10 @@ export function buildSession(input: BuildInput): PlannedBlock[] {
   // Time budget per block. The fun block soaks up whatever is left.
   const plan =
     minutes === 10
-      ? { warm: 3, edge: 3, due: [] as number[] }
+      ? { edge: 3, due: [] as number[] }
       : minutes === 20
-        ? { warm: 4, edge: 5, due: [6] }
-        : { warm: 4, edge: 6, due: [6, 7] };
+        ? { edge: 5, due: [6] }
+        : { edge: 6, due: [6, 7] };
   if (energy === "low") plan.edge = Math.max(3, plan.edge - 1);
   if (energy === "high" && plan.due.length) plan.due[0] += 1;
 
@@ -116,7 +135,7 @@ export function buildSession(input: BuildInput): PlannedBlock[] {
   blocks.push({
     kind: "warmup",
     title: "Warm-up",
-    plannedMin: plan.warm,
+    plannedMin: Math.ceil(steps.reduce((n, st) => n + st.seconds, 0) / 60),
     done: false,
     ref: `warmup:${steps.map((s) => s.id).join("+")}`,
     payload: { type: "warmup", steps },
@@ -185,7 +204,12 @@ export function buildSession(input: BuildInput): PlannedBlock[] {
         plannedMin: mins,
         done: false,
         ref: `strum:${pattern.id}`,
-        payload: { type: "strum", patternId: pattern.id, chords: [...chords], bpm: pattern.startBpm + bump },
+        payload: {
+          type: "strum",
+          patternId: pattern.id,
+          chords: [...chords],
+          ...startTempo(`strum:${pattern.id}`, players, input.tempos, pattern.startBpm + bump),
+        },
       });
     } else if (cat === "scale") {
       const scale = leastRecent(rand, Object.values(SCALES), recentRefs, (s) => `scale:${s.id}`);
@@ -198,8 +222,8 @@ export function buildSession(input: BuildInput): PlannedBlock[] {
         payload: {
           type: "scale",
           scaleId: scale.id,
-          bpm: 60 + bump,
           exercise: pick(rand, SCALE_EXERCISES),
+          ...startTempo(`scale:${scale.id}`, players, input.tempos, 60 + bump),
         },
       });
     } else {
@@ -210,7 +234,11 @@ export function buildSession(input: BuildInput): PlannedBlock[] {
         plannedMin: mins,
         done: false,
         ref: `progression:${prog.id}`,
-        payload: { type: "progression", prog, bpm: prog.bpm + bump },
+        payload: {
+          type: "progression",
+          prog,
+          ...startTempo(`progression:${prog.id}`, players, input.tempos, prog.bpm + bump),
+        },
       });
     }
   });
@@ -234,6 +262,13 @@ export function buildSession(input: BuildInput): PlannedBlock[] {
   });
 
   return blocks;
+}
+
+/** Other fun ideas that fit these players, for the "swap" button. */
+export function funOptions(players: PlayerId[], bests: BuildInput["bests"]): FunIdea[] {
+  const known = knownChords(groupBests(players, bests));
+  const together = players.length > 1;
+  return FUN.filter((f) => subset(f.needs, known) && (together ? !f.solo : !f.together));
 }
 
 /** Strip the payload before saving. */

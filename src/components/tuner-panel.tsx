@@ -3,15 +3,29 @@
 import { useState } from "react";
 import { useTuner } from "@/lib/audio/use-tuner";
 import { centsOff, noteName } from "@/lib/music/pitch";
-import { nearestString, TUNINGS } from "@/lib/music/tunings";
+import {
+  customTuning,
+  DEFAULT_TUNING_LIST,
+  findTuning,
+  nearestString,
+  TUNINGS,
+  type Tuning,
+} from "@/lib/music/tunings";
+import { useApp } from "./app-provider";
 import { Button, Chip } from "./ui";
 
 const IN_TUNE = 5; // cents
 
 export function TunerPanel({ compact = false }: { compact?: boolean }) {
   const { status, reading, start, stop } = useTuner();
-  const [tuningId, setTuningId] = useState("standard");
-  const tuning = TUNINGS.find((t) => t.id === tuningId) ?? TUNINGS[0];
+  const { settings, updateSettings } = useApp();
+  const [adding, setAdding] = useState(false);
+  const ids = settings.tunings?.length ? settings.tunings : DEFAULT_TUNING_LIST;
+  const list = ids.map(findTuning).filter(Boolean) as Tuning[];
+  const tuning = list[0] ?? TUNINGS[0];
+  // Picking a tuning moves it to the front, so the list stays "most recent first".
+  const use = (id: string) => updateSettings({ tunings: [id, ...ids.filter((x) => x !== id)] });
+  const remove = (id: string) => updateSettings({ tunings: ids.filter((x) => x !== id) });
 
   const listening = status === "listening";
   const midiFloat = reading ? 12 * Math.log2(reading.freq / 440) + 69 : null;
@@ -32,12 +46,25 @@ export function TunerPanel({ compact = false }: { compact?: boolean }) {
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2">
-        {TUNINGS.map((t) => (
-          <Chip key={t.id} on={t.id === tuningId} onClick={() => setTuningId(t.id)}>
+        {list.map((t) => (
+          <Chip key={t.id} on={t.id === tuning.id} onClick={() => use(t.id)}>
             {t.label}
           </Chip>
         ))}
+        <Chip on={adding} onClick={() => setAdding(!adding)} aria-label="Add a tuning">
+          +
+        </Chip>
       </div>
+      {adding && (
+        <AddTuning
+          inList={ids}
+          onAdd={(id) => {
+            use(id);
+            setAdding(false);
+          }}
+          onRemove={remove}
+        />
+      )}
       {tuning.note && !compact && (
         <p className="mt-3 text-sm text-ink-dim">{tuning.note}</p>
       )}
@@ -127,6 +154,81 @@ export function TunerPanel({ compact = false }: { compact?: boolean }) {
           address bar, then press Start tuner again.
         </p>
       )}
+    </div>
+  );
+}
+
+/** The + panel: pick from presets, or build your own string by string. */
+function AddTuning({
+  inList,
+  onAdd,
+  onRemove,
+}: {
+  inList: string[];
+  onAdd: (id: string) => void;
+  onRemove: (id: string) => void;
+}) {
+  const [custom, setCustom] = useState<number[]>(TUNINGS[0].strings.map((s) => s.midi));
+  const preview = customTuning(custom);
+  const bump = (i: number, d: number) =>
+    setCustom((c) => c.map((m, j) => (j === i ? Math.max(c[i] - 5, Math.min(c[i] + 5, m + d)) : m)));
+
+  return (
+    <div className="mt-4 rounded-[min(var(--r),20px)] border-(length:--bw) border-ink bg-surface p-5">
+      <h3 className="font-semibold">Add a tuning</h3>
+      <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+        {TUNINGS.map((t) => {
+          const has = inList.includes(t.id);
+          return (
+            <li key={t.id} className="flex items-center justify-between gap-3 rounded-(--r) border-2 border-ink px-3 py-2">
+              <span>
+                <b>{t.label}</b>
+                <span className="ml-2 text-sm text-ink-dim">{t.strings.map((x) => x.name).join(" ")}</span>
+              </span>
+              {has ? (
+                inList.length > 1 ? (
+                  <Button size="sm" variant="ghost" onClick={() => onRemove(t.id)}>
+                    Remove
+                  </Button>
+                ) : (
+                  <span className="text-sm text-ink-dim">In list</span>
+                )
+              ) : (
+                <Button size="sm" onClick={() => onAdd(t.id)}>
+                  Add
+                </Button>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+
+      <h3 className="mt-6 font-semibold">Or make your own</h3>
+      <div className="mt-3 grid grid-cols-6 gap-2">
+        {custom.map((m, i) => (
+          <div key={i} className="flex flex-col items-center gap-1">
+            <Button size="sm" onClick={() => bump(i, 1)} aria-label={`String ${6 - i} up`}>
+              ▲
+            </Button>
+            <span className="py-1 text-lg font-bold">{preview.strings[i].name}</span>
+            <Button size="sm" onClick={() => bump(i, -1)} aria-label={`String ${6 - i} down`}>
+              ▼
+            </Button>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <Button variant="primary" onClick={() => onAdd(preview.id)} disabled={inList.includes(preview.id)}>
+          Add {preview.label}
+        </Button>
+        {inList
+          .filter((id) => id.startsWith("custom:"))
+          .map((id) => (
+            <Button key={id} size="sm" variant="ghost" onClick={() => onRemove(id)}>
+              Remove {findTuning(id)?.label}
+            </Button>
+          ))}
+      </div>
     </div>
   );
 }

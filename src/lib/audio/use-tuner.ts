@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getAudioContext } from "./context";
-import { centsOff, detectPitch, freqToMidi } from "../music/pitch";
+import { centsOff, detectPitch, freqToMidi, PitchSmoother } from "../music/pitch";
 
 export interface TunerReading {
   freq: number;
@@ -18,7 +18,7 @@ export function useTuner() {
   const [reading, setReading] = useState<TunerReading | null>(null);
   const stream = useRef<MediaStream | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
-  const history = useRef<number[]>([]);
+  const smoother = useRef(new PitchSmoother());
   const lastSeen = useRef(0);
 
   const stop = useCallback(() => {
@@ -26,7 +26,7 @@ export function useTuner() {
     timer.current = null;
     stream.current?.getTracks().forEach((t) => t.stop());
     stream.current = null;
-    history.current = [];
+    smoother.current.reset();
     setReading(null);
     setStatus("off");
   }, []);
@@ -56,18 +56,13 @@ export function useTuner() {
       timer.current = setInterval(() => {
         analyser.getFloatTimeDomainData(buf);
         const f = detectPitch(buf, ctx.sampleRate);
+        const shown = smoother.current.push(f > 60 && f < 1400 ? f : -1);
         const now = performance.now();
-        if (f > 60 && f < 1400) {
-          // Median of the last few readings keeps the needle from jumping.
-          const h = history.current;
-          h.push(f);
-          if (h.length > 5) h.shift();
-          const med = [...h].sort((a, b) => a - b)[Math.floor(h.length / 2)];
-          const midi = freqToMidi(med);
+        if (shown !== null) {
+          const midi = freqToMidi(shown);
           lastSeen.current = now;
-          setReading({ freq: med, midi, cents: centsOff(med, midi) });
-        } else if (now - lastSeen.current > 1500) {
-          history.current = [];
+          setReading({ freq: shown, midi, cents: centsOff(shown, midi) });
+        } else if (now - lastSeen.current > 1200) {
           setReading(null);
         }
       }, 50);

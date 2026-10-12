@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import type { Subdivision } from "@/lib/audio/metronome";
+import { useEffect, useState } from "react";
+import { MAX_BPM, MIN_BPM, type BeatSound, type Subdivision, type Voice } from "@/lib/audio/metronome";
 import { useMetronome, type MetronomeApi } from "@/lib/audio/use-metronome";
 import { Button, Chip } from "./ui";
 
@@ -12,24 +12,82 @@ const SUBS: { v: Subdivision; label: string }[] = [
   { v: 4, label: "16ths" },
 ];
 
-/** Beat lights. The first beat of each bar is red. */
+const VOICES: { v: Voice; label: string }[] = [
+  { v: "click", label: "Click" },
+  { v: "wood", label: "Woodblock" },
+  { v: "hat", label: "Hi-hat" },
+  { v: "cowbell", label: "Cowbell" },
+];
+
+const SOUND_LABEL: Record<BeatSound, string> = {
+  accent: "Accent",
+  normal: "Normal",
+  soft: "Soft",
+  off: "Off",
+};
+
+/**
+ * One box per beat. Tap a box to change that beat: accent, normal, soft, off.
+ * The box height shows how loud it is; the beat playing now lights up.
+ */
 export function BeatLights({ api }: { api: MetronomeApi }) {
-  const { opts, tick } = api;
+  const { opts, tick, cycleBeat } = api;
   return (
-    <ol className="flex gap-2" aria-hidden>
-      {Array.from({ length: opts.beatsPerBar }, (_, i) => {
-        const on = tick?.beat === i;
-        const down = i === 0 && opts.accent;
+    <ol className="flex h-16 items-end gap-2">
+      {opts.beats.map((sound, i) => {
+        const on = tick?.beat === i && sound !== "off";
+        const h = sound === "accent" ? "100%" : sound === "normal" ? "62%" : "32%";
         return (
-          <li
-            key={i}
-            className={`h-10 flex-1 rounded-(--r) border-(length:--bw) border-ink transition-colors duration-75 ${
-              on ? (down ? "bg-live" : "bg-ink") : ""
-            }`}
-          />
+          <li key={i} className="flex h-full flex-1 items-end">
+            <button
+              type="button"
+              onClick={() => cycleBeat(i)}
+              aria-label={`Beat ${i + 1}: ${SOUND_LABEL[sound]}. Tap to change.`}
+              title={`${SOUND_LABEL[sound]}. Tap to change.`}
+              className={`w-full rounded-(--r) border-(length:--bw) border-ink transition-colors duration-75 ${
+                sound === "off" ? "border-dashed opacity-40" : ""
+              } ${on ? (sound === "accent" ? "bg-live" : "bg-ink") : "hover:bg-surface-2"}`}
+              style={{ height: h }}
+            />
+          </li>
         );
       })}
     </ol>
+  );
+}
+
+/** The big BPM number. Click it and type a tempo. */
+function BpmNumber({ api, compact }: { api: MetronomeApi; compact: boolean }) {
+  const { opts, update } = api;
+  const [draft, setDraft] = useState<string | null>(null);
+  const commit = () => {
+    const n = Number(draft);
+    if (draft !== null && Number.isFinite(n) && n > 0) update({ bpm: n });
+    setDraft(null);
+  };
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      aria-label="Tempo in BPM. Type a number."
+      value={draft ?? String(opts.bpm)}
+      onFocus={(e) => {
+        setDraft(String(opts.bpm));
+        requestAnimationFrame(() => e.target.select());
+      }}
+      onChange={(e) => setDraft(e.target.value.replace(/[^0-9]/g, "").slice(0, 3))}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+        if (e.key === "Escape") {
+          setDraft(null);
+          (e.target as HTMLInputElement).blur();
+        }
+      }}
+      className={`display num w-[3.2ch] cursor-text rounded-(--r) bg-transparent text-center outline-none hover:bg-surface-2 focus:bg-surface-2 ${
+        compact ? "text-6xl" : "text-[clamp(5rem,13vw,9rem)]"
+      }`}
+    />
   );
 }
 
@@ -74,13 +132,10 @@ export function MetronomePanel({
           −
         </Button>
         <div className="text-center">
-          <div
-            className={`display num ${compact ? "text-6xl" : "text-[clamp(5rem,13vw,9rem)]"}`}
-            aria-live="polite"
-          >
-            {opts.bpm}
+          <BpmNumber api={api} compact={compact} />
+          <div className="mt-1 text-sm text-ink-dim">
+            BPM{!compact && `, click to type (${MIN_BPM} to ${MAX_BPM})`}
           </div>
-          <div className="mt-1 text-sm text-ink-dim">beats per minute</div>
         </div>
         <Button
           size={compact ? "md" : "lg"}
@@ -103,6 +158,7 @@ export function MetronomePanel({
 
       <div className="mt-6">
         <BeatLights api={api} />
+        <p className="mt-2 text-center text-xs text-ink-dim">Tap a beat to make it louder, softer, or silent</p>
       </div>
 
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
@@ -124,9 +180,6 @@ export function MetronomePanel({
                   {n}
                 </Chip>
               ))}
-              <Chip on={opts.accent} onClick={() => update({ accent: !opts.accent })}>
-                Accent beat 1
-              </Chip>
             </div>
           </div>
           <div>
@@ -138,6 +191,26 @@ export function MetronomePanel({
                 </Chip>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {!compact && (
+        <div className="mt-8">
+          <h3 className="font-semibold">Sound</h3>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {VOICES.map((v) => (
+              <Chip
+                key={v.v}
+                on={opts.voice === v.v}
+                onClick={() => {
+                  update({ voice: v.v });
+                  if (!running) api.previewVoice(v.v);
+                }}
+              >
+                {v.label}
+              </Chip>
+            ))}
           </div>
         </div>
       )}

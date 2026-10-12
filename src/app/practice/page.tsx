@@ -15,13 +15,14 @@ import { newId } from "@/lib/ids";
 import { PLAYERS, playersFor, whoLabel } from "@/lib/players";
 import {
   buildSession,
+  funOptions,
   toSessionBlocks,
   type PlannedBlock,
   type SessionLength,
 } from "@/lib/session/builder";
 import { dayKey, daysThisWeek, practiceDays } from "@/lib/streaks";
 import type { Energy, Feel, PracticeSession } from "@/lib/types";
-import { bestsOf, useMeasurements } from "@/lib/use-measurements";
+import { bestsOf, lastTempos, useMeasurements } from "@/lib/use-measurements";
 import { useSessions } from "@/lib/use-sessions";
 
 type Stage = "setup" | "run" | "finish" | "done";
@@ -59,9 +60,11 @@ export default function PracticePage() {
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
   const [elapsed, setElapsed] = useState(0); // whole session, active seconds
-  const [blockElapsed, setBlockElapsed] = useState(0);
+  const [blockTimes, setBlockTimes] = useState<number[]>([]); // seconds spent in each block
+  const [trails, setTrails] = useState<Record<number, number[]>>({}); // tempos nailed per block
   const [drawer, setDrawer] = useState<"none" | "tuner" | "metronome">("none");
-  const [pain, setPain] = useState(false);
+  const [pain, setPain] = useState<boolean | null>(null);
+  const [feel, setFeel] = useState<Feel | null>(null);
   const [newBests, setNewBests] = useState<string[]>([]);
   const [saved, setSaved] = useState<PracticeSession | null>(null);
   const sessionId = useRef(newId());
@@ -70,6 +73,8 @@ export default function PracticePage() {
 
   const changeBests = useMemo(() => bestsOf(measurements ?? [], "chord-changes"), [measurements]);
   const bpmBests = useMemo(() => bestsOf(measurements ?? [], "clean-bpm"), [measurements]);
+  const tempos = useMemo(() => lastTempos(measurements ?? []), [measurements]);
+  const funChoices = useMemo(() => funOptions(players, changeBests), [players, changeBests]);
 
   // Last time, did something hurt? Then suggest an easy, short one.
   const lastSession = useMemo(
@@ -99,20 +104,23 @@ export default function PracticePage() {
 
   const plan = useMemo(() => {
     if (!players.length || !measurements) return [];
-    return buildSession({ players, minutes, energy, bests: changeBests, recentRefs, seed });
-  }, [players, minutes, energy, changeBests, recentRefs, seed, measurements]);
+    return buildSession({ players, minutes, energy, bests: changeBests, recentRefs, tempos, seed });
+    // Rebuild only when the inputs that shape the plan change, not on every new tempo saved mid-session.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [players, minutes, energy, changeBests, recentRefs, seed, !!measurements]);
 
   // Session clock. Only runs while practicing and not paused.
   useEffect(() => {
     if (stage !== "run" || paused) return;
     const t = setInterval(() => {
       setElapsed((e) => e + 1);
-      setBlockElapsed((e) => e + 1);
+      setBlockTimes((bt) => bt.map((v, i) => (i === idx ? v + 1 : v)));
     }, 1000);
     return () => clearInterval(t);
-  }, [stage, paused]);
+  }, [stage, paused, idx]);
 
   const block = blocks[idx];
+  const blockElapsed = blockTimes[idx] ?? 0;
   const blockLeft = block ? block.plannedMin * 60 - blockElapsed : 0;
   useEffect(() => {
     if (stage === "run" && block && blockLeft === 0) beep(1046, 350);
@@ -123,9 +131,12 @@ export default function PracticePage() {
     if (stage !== "run" || !block) return;
     metro.stop();
     const p = block.payload;
-    if (p.type === "strum") metro.update({ bpm: p.bpm, subdivision: 2, beatsPerBar: 4 });
-    if (p.type === "scale") metro.update({ bpm: p.bpm, subdivision: 1, beatsPerBar: 4 });
-    if (p.type === "progression") metro.update({ bpm: p.bpm, subdivision: 2, beatsPerBar: 4 });
+    // Coming back to a block? Pick up just above the last tempo you nailed.
+    const lastNailed = trails[idx]?.at(-1);
+    const bpm = (b: number) => (lastNailed ? lastNailed + 5 : b);
+    if (p.type === "strum") metro.update({ bpm: bpm(p.bpm), subdivision: 2, beatsPerBar: 4 });
+    if (p.type === "scale") metro.update({ bpm: bpm(p.bpm), subdivision: 1, beatsPerBar: 4 });
+    if (p.type === "progression") metro.update({ bpm: bpm(p.bpm), subdivision: 2, beatsPerBar: 4 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx, stage]);
 
@@ -133,34 +144,62 @@ export default function PracticePage() {
     setBlocks(plan);
     setIdx(0);
     setElapsed(0);
-    setBlockElapsed(0);
+    setBlockTimes(plan.map(() => 0));
+    setTrails({});
     setPaused(false);
     setNewBests([]);
-    setPain(false);
+    setPain(null);
+    setFeel(null);
     sessionId.current = newId();
     startedAt.current = new Date().toISOString();
     setStage("run");
   }
 
-  function next() {
-    setBlocks((bs) => bs.map((b, i) => (i === idx ? { ...b, done: true } : b)));
-    if (idx < blocks.length - 1) {
-      setIdx(idx + 1);
-      setBlockElapsed(0);
-    } else {
-      endSession();
+  /**
+   * Remember how a tempo drill went (where it started, fastest nailed), so
+   * next time it starts halfway between. Skipped if you barely touched it.
+   */
+  function saveTempo(i: number) {
+    const b = blocks[i];
+    const p = b?.payload;
+    if (!b?.ref || !p || !(p.type === "strum" || p.type === "scale" || p.type === "progression")) return;
+    const trail = trails[i] ?? [];
+    if (!trail.length && (blockTimes[i] ?? 0) < 60) return;
+    for (const pl of players) {
+      void record({
+        id: `${sessionId.current}:tempo:${i}:${pl}`,
+        playerId: pl,
+        kind: "tempo",
+        subject: b.ref,
+        value: trail.length ? Math.max(...trail) : p.bpm,
+        meta: { start: p.bpm },
+        sessionId: sessionId.current,
+      });
     }
   }
 
-  function endSession() {
+  function next() {
+    saveTempo(idx);
+    setBlocks((bs) => bs.map((b, i) => (i === idx ? { ...b, done: true } : b)));
+    if (idx < blocks.length - 1) setIdx(idx + 1);
+    else endSession(false);
+  }
+
+  function back() {
+    saveTempo(idx);
+    if (idx > 0) setIdx(idx - 1);
+  }
+
+  function endSession(save = true) {
+    if (save) saveTempo(idx);
     metro.stop();
     setDrawer("none");
     setStage("finish");
   }
 
   const saveSession = useCallback(
-    async (feel: Feel) => {
-      if (!store) return;
+    async () => {
+      if (!store || !feel) return;
       const s: PracticeSession = {
         id: sessionId.current,
         players,
@@ -168,7 +207,7 @@ export default function PracticePage() {
         endedAt: new Date().toISOString(),
         minutes: Math.max(1, Math.round(elapsed / 60)),
         feel,
-        pain,
+        pain: pain === true,
         blocks: toSessionBlocks(blocks),
       };
       await store.putSession(s);
@@ -176,7 +215,7 @@ export default function PracticePage() {
       dataChanged();
       setStage("done");
     },
-    [store, players, elapsed, pain, blocks, dataChanged],
+    [store, feel, players, elapsed, pain, blocks, dataChanged],
   );
 
   async function onChangeSaved(r: ChangeResult, pair: [string, string]) {
@@ -195,7 +234,9 @@ export default function PracticePage() {
     }
   }
 
-  async function onNailed(subject: string, bpm: number) {
+  async function onNailed(bpm: number) {
+    const subject = block.ref ?? "";
+    setTrails((t) => ({ ...t, [idx]: [...(t[idx] ?? []), bpm] }));
     for (const p of players) {
       const prev = bpmBests[p][subject];
       await record({ playerId: p, kind: "clean-bpm", subject, value: bpm, sessionId: sessionId.current });
@@ -287,7 +328,7 @@ export default function PracticePage() {
     );
   }
 
-  // ---------- Finish: one tap ----------
+  // ---------- Finish: how it felt, anything hurt, save ----------
   if (stage === "finish") {
     return (
       <div>
@@ -296,23 +337,33 @@ export default function PracticePage() {
           <span className="num font-bold">{Math.max(1, Math.round(elapsed / 60))}</span> minutes
           {players.length > 1 ? " together" : ""}.
         </p>
+
         <h2 className="mt-10 text-xl font-semibold">How did it feel?</h2>
         <div className="mt-4 flex flex-wrap gap-3">
           {FEELS.map((f) => (
-            <Button key={f.v} size="lg" onClick={() => saveSession(f.v)}>
+            <Chip key={f.v} on={feel === f.v} onClick={() => setFeel(f.v)} className="px-6 py-3 text-lg">
               {f.label}
-            </Button>
+            </Chip>
           ))}
         </div>
-        <label className="mt-8 flex w-fit cursor-pointer items-center gap-3 text-lg">
-          <input
-            type="checkbox"
-            checked={pain}
-            onChange={(e) => setPain(e.target.checked)}
-            className="size-5 accent-[var(--live)]"
-          />
-          Something hurt (wrist, fingers, anything)
-        </label>
+
+        <h2 className="mt-8 text-xl font-semibold">Anything hurt?</h2>
+        <p className="mt-1 text-sm text-ink-dim">Wrist, fingers, anything. If yes, next time starts short and easy.</p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Chip on={pain === false} onClick={() => setPain(false)} className="px-6 py-3 text-lg">
+            All good
+          </Chip>
+          <Chip on={pain === true} onClick={() => setPain(true)} className="px-6 py-3 text-lg">
+            Something hurt
+          </Chip>
+        </div>
+
+        <div className="mt-10">
+          <Button variant="primary" size="lg" onClick={saveSession} disabled={!feel}>
+            Save session
+          </Button>
+          {!feel && <p className="mt-2 text-sm text-ink-dim">Pick how it felt to save.</p>}
+        </div>
       </div>
     );
   }
@@ -355,7 +406,7 @@ export default function PracticePage() {
             </ul>
           </>
         )}
-        {pain && (
+        {pain === true && (
           <p className="mt-8 max-w-prose rounded-(--r) border-(length:--bw) border-ink bg-surface p-4">
             Rest it. Next time the app will start you with a short, easy session.
           </p>
@@ -400,7 +451,7 @@ export default function PracticePage() {
           <Chip on={drawer === "metronome"} onClick={() => setDrawer(drawer === "metronome" ? "none" : "metronome")}>
             Metronome
           </Chip>
-          <Button variant="ghost" onClick={endSession}>
+          <Button variant="ghost" onClick={() => endSession()}>
             End session
           </Button>
         </div>
@@ -430,6 +481,9 @@ export default function PracticePage() {
         <div className="sm:text-right">
           <div className={`display num text-6xl ${over ? "text-live" : ""}`}>{over ? "0:00" : fmt(blockLeft)}</div>
           <div className="mt-3 flex gap-2 sm:justify-end">
+            <Button onClick={back} disabled={idx === 0} aria-label="Previous block">
+              Back
+            </Button>
             <Button onClick={() => setPaused(!paused)}>{paused ? "Resume" : "Pause"}</Button>
             <Button variant="primary" onClick={next}>
               {idx < blocks.length - 1 ? "Next" : "Finish"}
@@ -446,11 +500,24 @@ export default function PracticePage() {
         <BlockView
           block={block}
           players={players}
+          who={who}
           metro={metro}
           changeBests={changeBests}
           bpmBests={bpmBests}
+          elapsed={blockElapsed}
+          trail={trails[idx] ?? []}
+          funOptions={funChoices}
+          seed={seed}
+          onJump={(sec) => setBlockTimes((bt) => bt.map((v, i) => (i === idx ? sec : v)))}
           onChangeSaved={onChangeSaved}
           onNailed={onNailed}
+          onSwapFun={(idea) =>
+            setBlocks((bs) =>
+              bs.map((b, i) =>
+                i === idx ? { ...b, title: idea.title, ref: `fun:${idea.id}`, payload: { type: "fun", idea } } : b,
+              ),
+            )
+          }
         />
       </div>
     </div>

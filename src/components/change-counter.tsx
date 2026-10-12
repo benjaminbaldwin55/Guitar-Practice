@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CHORD_PAIRS, nextMilestone, pairId, unlockedCount, UNLOCK_AT } from "@/content/chord-path";
 import { beep } from "@/lib/audio/beep";
-import { useStrumCounter } from "@/lib/audio/use-strum-counter";
+import { useChangeCounter } from "@/lib/audio/use-change-counter";
 import { PLAYERS } from "@/lib/players";
 import type { PlayerId } from "@/lib/types";
 import type { Bests } from "@/lib/use-measurements";
@@ -12,7 +12,7 @@ import { Button } from "./ui";
 
 const SECONDS = 60;
 
-type Phase = "ready" | "countdown" | "running" | "review" | "saved";
+type Phase = "ready" | "calibrate" | "countdown" | "running" | "review" | "saved";
 
 export interface ChangeResult {
   player: PlayerId;
@@ -22,8 +22,9 @@ export interface ChangeResult {
 }
 
 /**
- * One-minute chord changes. Strum once each time you land the next chord;
- * the mic counts the strums. In a together session you take turns.
+ * One-minute chord changes. The app learns how your two chords sound (one
+ * strum each), then counts only real switches from one to the other.
+ * In a together session you take turns.
  */
 export function ChangeCounter({
   pair,
@@ -37,25 +38,50 @@ export function ChangeCounter({
   onSave: (r: ChangeResult) => Promise<void> | void;
 }) {
   const id = pairId(pair);
-  const counter = useStrumCounter();
+  const counter = useChangeCounter(pair);
   const [turn, setTurn] = useState(0);
   const [phase, setPhase] = useState<Phase>("ready");
+  const [calSide, setCalSide] = useState<0 | 1>(0);
+  const [calMissed, setCalMissed] = useState(false);
   const [left, setLeft] = useState(SECONDS);
   const [count3, setCount3] = useState(3);
   const [result, setResult] = useState<ChangeResult | null>(null);
   const tick = useRef<ReturnType<typeof setInterval> | null>(null);
+  const cancelled = useRef(false);
 
   const player = players[turn];
   const color = `var(--${player})`;
   const best = bests[player]?.[id] ?? null;
   const goal = nextMilestone(best);
 
-  useEffect(() => () => {
-    if (tick.current) clearInterval(tick.current);
-  }, []);
+  useEffect(
+    () => () => {
+      cancelled.current = true;
+      if (tick.current) clearInterval(tick.current);
+    },
+    [],
+  );
 
-  async function start() {
-    await counter.openMic();
+  async function start(recalibrate = false) {
+    const ok = await counter.openMic();
+    if (!ok) return countdown(); // no mic: count in your head
+    if (recalibrate) counter.forgetCalibration();
+    if (recalibrate || !counter.isCalibrated()) {
+      setPhase("calibrate");
+      for (const side of [0, 1] as const) {
+        setCalSide(side);
+        setCalMissed(false);
+        const heard = await counter.calibrate(side);
+        if (cancelled.current) return;
+        if (heard) beep(1320, 90);
+        else setCalMissed(true);
+      }
+    }
+    countdown();
+  }
+
+  function countdown() {
+    counter.listenForFloor();
     setPhase("countdown");
     setCount3(3);
     let n = 3;
@@ -94,7 +120,6 @@ export function ChangeCounter({
 
   async function save() {
     const value = counter.count;
-    // Did this score open a new pair?
     const before = unlockedCount(bests[player] ?? {});
     const after = unlockedCount({ ...(bests[player] ?? {}), [id]: Math.max(value, best ?? 0) });
     const r: ChangeResult = {
@@ -116,15 +141,29 @@ export function ChangeCounter({
   }
 
   const big = "display num text-[clamp(6rem,18vw,12rem)]";
+  const live = phase === "running" && counter.mic === "on";
+  // Which chord box to light up: the one it hears while counting, or the one to strum while calibrating.
+  const lit = phase === "calibrate" ? calSide : live ? counter.hearing : null;
 
   return (
     <div>
       <div className="flex items-center justify-center gap-4 md:gap-12">
-        <ChordDiagram id={pair[0]} size={phase === "running" ? 110 : 130} />
-        <span className="display text-4xl md:text-5xl" aria-hidden>
-          ⇄
-        </span>
-        <ChordDiagram id={pair[1]} size={phase === "running" ? 110 : 130} />
+        {pair.map((c, i) => (
+          <div key={c} className="contents">
+            {i === 1 && (
+              <span className="display text-4xl md:text-5xl" aria-hidden>
+                ⇄
+              </span>
+            )}
+            <div
+              className={`rounded-[min(var(--r),20px)] border-(length:--bw) px-3 pt-2 pb-1 transition-colors duration-100 ${
+                lit === i ? "flip-ink border-ink" : "border-transparent"
+              }`}
+            >
+              <ChordDiagram id={c} size={phase === "running" ? 110 : 130} />
+            </div>
+          </div>
+        ))}
       </div>
 
       {players.length > 1 && (
@@ -136,9 +175,9 @@ export function ChangeCounter({
       {phase === "ready" && (
         <div className="mt-6 text-center">
           <p className="mx-auto max-w-prose text-ink-dim">
-            Practice the switch slowly a few times first. Then, for one minute,
-            strum once every time you land the next chord. The mic counts the
-            strums.
+            Practice the switch slowly a few times. Then for one minute, switch
+            back and forth and strum each chord as you land it. The app listens
+            for which chord is ringing, so only real switches count.
           </p>
           <p className="mt-4 text-lg">
             {best ? (
@@ -154,16 +193,32 @@ export function ChangeCounter({
               <>First time on this one. Anything counts.</>
             )}
           </p>
-          <div className="mt-6">
-            <Button variant="primary" size="lg" onClick={start} disabled={counter.mic === "starting"}>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <Button variant="primary" size="lg" onClick={() => start()} disabled={counter.mic === "starting"}>
               Start the minute
             </Button>
+            {counter.isCalibrated() && (
+              <Button size="lg" variant="ghost" onClick={() => start(true)}>
+                Re-learn my chords
+              </Button>
+            )}
           </div>
           {counter.mic === "blocked" && (
-            <p className="mt-4 text-live">
-              No mic, so count in your head. You&apos;ll enter the number at the end.
-            </p>
+            <p className="mt-4 text-live">No mic, so count in your head. You&apos;ll enter the number at the end.</p>
           )}
+        </div>
+      )}
+
+      {phase === "calibrate" && (
+        <div className="mt-8 text-center">
+          <p className="display text-4xl" style={{ color }}>
+            Strum {pair[calSide]} once
+          </p>
+          <p className="mt-3 text-ink-dim">
+            Let it ring for a second. This teaches the app how your guitar sounds.
+          </p>
+          {calMissed && <p className="mt-2 text-live">Didn&apos;t catch the last one. Using the standard sound for it.</p>}
+          <MicMeter level={counter.level} />
         </div>
       )}
 
@@ -172,13 +227,13 @@ export function ChangeCounter({
           <div className={big} style={{ color }}>
             {count3}
           </div>
-          <p className="mt-2 text-ink-dim">Get your fingers on {pair[0]}</p>
+          <p className="mt-2 text-ink-dim">Fingers on {pair[0]}</p>
         </div>
       )}
 
       {phase === "running" && (
         <div className="mt-6 text-center">
-          <div className={big} style={{ color }} aria-live="off">
+          <div className={big} style={{ color }}>
             {counter.mic === "on" ? counter.count : "?"}
           </div>
           <div className="mx-auto mt-4 h-4 max-w-xl overflow-hidden rounded-(--r) border-(length:--bw) border-ink">
@@ -195,7 +250,7 @@ export function ChangeCounter({
       {phase === "review" && (
         <div className="mt-6 text-center">
           <p className="text-ink-dim">
-            {counter.mic === "on" ? "Heard this many changes. Fix it if it's off." : "How many did you count?"}
+            {counter.mic === "on" ? "Here's what it heard. Fix it if it's off." : "How many did you count?"}
           </p>
           <div className="mt-2 flex items-center justify-center gap-4">
             <Button size="lg" onClick={() => counter.setCount((c) => Math.max(0, c - 1))} aria-label="One fewer">
@@ -229,16 +284,16 @@ export function ChangeCounter({
             </p>
           )}
           {result.previousBest !== null && result.value > result.previousBest && (
-            <p className="mt-2 text-ink-dim">Up {result.value - result.previousBest} from last best.</p>
+            <p className="mt-2 text-ink-dim">Up {result.value - result.previousBest} from your last best.</p>
           )}
           {result.unlocked && (
-            <p className="mt-4 text-xl font-bold">
-              Unlocked: {result.unlocked[0]} to {result.unlocked[1]}
+            <p className="mt-4 text-2xl font-black">
+              Unlocked: {result.unlocked[0]} ⇄ {result.unlocked[1]}
             </p>
           )}
           {!result.unlocked && result.value < UNLOCK_AT && (
             <p className="mt-2 text-ink-dim">
-              Hit {UNLOCK_AT} to unlock the next chord change.
+              {UNLOCK_AT - result.value} more to unlock the next chord change.
             </p>
           )}
           <div className="mt-6 flex justify-center gap-3">
@@ -247,7 +302,13 @@ export function ChangeCounter({
                 {PLAYERS[players[turn + 1]].name}&apos;s turn
               </Button>
             ) : (
-              <Button size="lg" onClick={() => { counter.setCount(0); setPhase("ready"); }}>
+              <Button
+                size="lg"
+                onClick={() => {
+                  counter.setCount(0);
+                  setPhase("ready");
+                }}
+              >
                 Go again
               </Button>
             )}

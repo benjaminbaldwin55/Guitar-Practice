@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { unlockedCount, UNLOCK_AT, CHORD_PAIRS, pairId } from "@/content/chord-path";
-import { buildSession, groupBests, type BuildInput } from "./builder";
+import { buildSession, groupBests, startTempo, type BuildInput } from "./builder";
 
 const base: BuildInput = {
   players: ["ben"],
@@ -90,5 +90,34 @@ describe("buildSession", () => {
 
   it("plans together sessions around the weaker player", () => {
     expect(groupBests(["ben", "anna"], { ben: { "Em-G": 40 }, anna: { "Em-G": 15 } })).toEqual({ "Em-G": 15 });
+  });
+});
+
+describe("startTempo", () => {
+  it("starts halfway between last start and last best", () => {
+    expect(startTempo("scale:am-pent-1", ["ben"], { ben: { "scale:am-pent-1": { start: 60, top: 80 } } }, 60).bpm).toBe(70);
+  });
+
+  it("uses the default the first time", () => {
+    expect(startTempo("scale:am-pent-1", ["ben"], {}, 60).bpm).toBe(60);
+  });
+
+  it("never starts above last time's start when nothing was nailed", () => {
+    expect(startTempo("strum:campfire", ["ben"], { ben: { "strum:campfire": { start: 70, top: 0 } } }, 60).bpm).toBe(70);
+  });
+
+  it("goes with the slower player together", () => {
+    const t = { ben: { x: { start: 80, top: 100 } }, anna: { x: { start: 60, top: 64 } } };
+    expect(startTempo("x", ["ben", "anna"], t, 50).bpm).toBe(62);
+  });
+});
+
+describe("tempo carry-over in sessions", () => {
+  it("builds scale blocks at the remembered tempo", () => {
+    const tempos = { ben: { "scale:am-pent-1": { start: 60, top: 84 }, "scale:em-pent-open": { start: 60, top: 84 } } };
+    for (let seed = 0; seed < 30; seed++) {
+      const b = buildSession({ ...base, minutes: 30, seed, tempos });
+      for (const x of b) if (x.payload.type === "scale") expect(x.payload.bpm).toBe(72);
+    }
   });
 });

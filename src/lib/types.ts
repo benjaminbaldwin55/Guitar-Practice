@@ -33,6 +33,7 @@ export interface PracticeSession {
 export type MeasurementKind =
   | "chord-changes" // clean switches in 60s, subject like "Em-G"
   | "clean-bpm" // highest clean tempo, subject is a drill or riff id
+  | "tempo" // one block's tempo run: value = fastest nailed, meta.start = where it began
   | "note-accuracy" // percent, from pitch detection
   | "ear"; // percent correct
 
@@ -44,6 +45,7 @@ export interface Measurement {
   value: number;
   at: string; // ISO
   sessionId?: string;
+  meta?: Record<string, number>;
 }
 
 export interface Recording {
@@ -62,6 +64,8 @@ export interface Settings {
   /** A day counts toward the weekly goal once a player hits this many minutes. */
   minMinutesPerDay: number;
   maxSessionMin: number;
+  /** Tunings in the tuner's list, most recently used first. */
+  tunings: string[];
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -69,4 +73,5 @@ export const DEFAULT_SETTINGS: Settings = {
   weeklyTargetDays: 5,
   minMinutesPerDay: 10,
   maxSessionMin: 40,
+  tunings: ["standard", "drop-d", "eb"],
 };

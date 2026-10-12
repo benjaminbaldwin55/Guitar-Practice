@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  BEAT_CYCLE,
   bpmFromTaps,
-  clampBpm,
   Metronome,
   type MetronomeOptions,
   type Tick,
@@ -21,7 +21,8 @@ export function useMetronome(initial?: Partial<MetronomeOptions>) {
     bpm: 80,
     beatsPerBar: 4,
     subdivision: 1,
-    accent: true,
+    beats: ["accent", "normal", "normal", "normal"],
+    voice: "click",
     ...initial,
   });
   const [running, setRunning] = useState(false);
@@ -54,10 +55,18 @@ export function useMetronome(initial?: Partial<MetronomeOptions>) {
   }, []);
 
   const update = useCallback((patch: Partial<MetronomeOptions>) => {
-    const p = { ...patch };
-    if (p.bpm !== undefined) p.bpm = clampBpm(p.bpm);
-    m.current!.set(p);
-    setOpts((o) => ({ ...o, ...p }));
+    m.current!.set(patch);
+    setOpts({ ...m.current!.opts });
+  }, []);
+
+  /** Tap a beat: accent, normal, soft, off, and around again. Plays the new sound. */
+  const cycleBeat = useCallback((i: number) => {
+    const beats = [...m.current!.opts.beats];
+    const next = BEAT_CYCLE[(BEAT_CYCLE.indexOf(beats[i]) + 1) % BEAT_CYCLE.length];
+    beats[i] = next;
+    m.current!.set({ beats });
+    setOpts({ ...m.current!.opts });
+    if (!m.current!.running) void m.current!.preview(next);
   }, []);
 
   const start = useCallback(async () => {
@@ -83,7 +92,11 @@ export function useMetronome(initial?: Partial<MetronomeOptions>) {
     if (bpm) update({ bpm });
   }, [update]);
 
-  return { opts, update, running, start, stop, toggle, tick, tap, trainer, setTrainer };
+  const previewVoice = useCallback((voice: MetronomeOptions["voice"]) => {
+    void m.current!.preview("accent", voice);
+  }, []);
+
+  return { opts, update, cycleBeat, previewVoice, running, start, stop, toggle, tick, tap, trainer, setTrainer };
 }
 
 export type MetronomeApi = ReturnType<typeof useMetronome>;

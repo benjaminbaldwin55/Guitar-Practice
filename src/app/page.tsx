@@ -15,6 +15,10 @@ import {
 } from "@/lib/streaks";
 import type { Who } from "@/lib/types";
 import { useSessions } from "@/lib/use-sessions";
+import { nextUnlock, UNLOCK_AT } from "@/content/chord-path";
+import { playersFor } from "@/lib/players";
+import { groupBests } from "@/lib/session/builder";
+import { bestsOf, useMeasurements } from "@/lib/use-measurements";
 
 const OPTIONS: { who: Who; color: string; on: string; sub: string }[] = [
   { who: "ben", color: "var(--ben)", on: "var(--on-ben)", sub: PLAYERS.ben.guitar },
@@ -25,6 +29,8 @@ const OPTIONS: { who: Who; color: string; on: string; sub: string }[] = [
 export default function Home() {
   const { settings, setActiveWho, ready } = useApp();
   const sessions = useSessions() ?? [];
+  const { all: measurements } = useMeasurements();
+  const changeBests = bestsOf(measurements ?? [], "chord-changes");
   const now = new Date();
   const keys = weekDayKeys(now);
   const today = dayKey(now);
@@ -44,6 +50,7 @@ export default function Home() {
           const count = daysThisWeek(days, now);
           const streak = weekStreak(days, now, target);
           const selected = active === who;
+          const unlock = nextUnlock(groupBests(playersFor(who), changeBests));
           return (
             <li key={who} className="border-b-(length:--bw) border-line py-2">
               <button
@@ -75,6 +82,18 @@ export default function Home() {
                     {whoLabel(who)}
                   </span>
                   <span className="mt-3 block text-sm text-ink-faint">{sub}</span>
+                  {unlock && (
+                    <span className="mt-2 flex items-center gap-3 text-sm font-semibold">
+                      <span className="h-2 w-28 overflow-hidden rounded-full border-2 border-current">
+                        <span
+                          className="block h-full bg-current"
+                          style={{ width: `${(unlock.best / UNLOCK_AT) * 100}%` }}
+                        />
+                      </span>
+                      {unlock.pair[0]} ⇄ {unlock.pair[1]}: {unlock.best} of {UNLOCK_AT} to unlock {unlock.opens[0]} ⇄{" "}
+                      {unlock.opens[1]}
+                    </span>
+                  )}
                 </span>
                 <span className="flex items-end gap-6 sm:flex-col sm:items-end sm:gap-3">
                   <WeekDots keys={keys} played={days} today={today} color={selected ? on : color} />

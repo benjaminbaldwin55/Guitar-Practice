@@ -61,3 +61,18 @@ export function knownChords(bests: Record<string, number>): string[] {
   }
   return out;
 }
+
+/**
+ * The closest unlock: the open pair nearest to UNLOCK_AT, and the pair it
+ * would open. Null once every pair is open.
+ */
+export function nextUnlock(
+  bests: Record<string, number>,
+): { pair: [string, string]; best: number; opens: [string, string] } | null {
+  const n = unlockedCount(bests);
+  if (n >= CHORD_PAIRS.length) return null;
+  const candidates = CHORD_PAIRS.slice(0, n).filter((p) => (bests[pairId(p)] ?? 0) < UNLOCK_AT);
+  if (!candidates.length) return null;
+  const pair = candidates.reduce((a, b) => ((bests[pairId(b)] ?? 0) > (bests[pairId(a)] ?? 0) ? b : a));
+  return { pair, best: bests[pairId(pair)] ?? 0, opens: CHORD_PAIRS[n] };
+}

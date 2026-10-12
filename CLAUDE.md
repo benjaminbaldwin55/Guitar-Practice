@@ -14,8 +14,10 @@ Monotonous routine, goals too far away, progress only self-reported. So:
 vary every session, keep a milestone 1 or 2 sessions away, measure things.
 
 ## Product rules
-- Less writing, more playing. No forms. Record numbers during play; at most
-  one tap after a session; weekly review at most two tap questions.
+- Less writing, more playing. No forms. Record numbers during play. After a
+  session: tap how it felt, tap whether anything hurt, Save (Ben asked to
+  always get the pain question before leaving). Weekly review at most two
+  tap questions.
 - Cooperative, never competitive between Ben and Anna.
 - Ben has had wrist pain: warm-up every session, soft cap on length, stop on pain.
 - Always end a session on something fun.
@@ -39,13 +41,30 @@ vary every session, keep a milestone 1 or 2 sessions away, measure things.
   progression), and a fun finish. It avoids refs used in recent sessions.
 - `src/content/chord-path.ts` is the learning path. Two chord pairs open on
   day one; every pair that reaches 20 changes/min opens the next.
-- Measurements: `chord-changes` (subject = pair id like `Em-G`, counted by
-  the mic strum detector, editable after) and `clean-bpm` (subject = block
-  ref like `strum:campfire`, from the "Nailed it" button).
+- Measurements: `chord-changes` (subject = pair id like `Em-G`, editable
+  after), `clean-bpm` (subject = block ref like `strum:campfire`, from
+  "Nailed it"), and `tempo` (one block's run: value = fastest nailed,
+  meta.start = starting tempo). Next session starts a drill halfway between
+  last start and last fastest (`src/lib/tempo.ts`).
+- Chord changes are counted by `src/lib/audio/change-detector.ts`: it knows
+  the two chords, classifies what's ringing by pitch-class content (chroma),
+  and counts only confirmed switches. A one-strum-per-chord calibration
+  tunes it to the guitar. Volume barely matters; re-strums never count.
+- Tuner uses the McLeod pitch method plus `PitchSmoother`. Don't go back to
+  plain autocorrelation: it jumps octaves on low strings and fails with
+  distortion. Saved tuning list lives in settings (`tunings`, recent first).
+- Accuracy for both was measured against real guitar recordings
+  (tonejs-instrument-guitar-*-mp3 on npm) through a simulated laptop mic.
+  Re-run that kind of check before changing either algorithm.
 - Together sessions plan around the weaker player's scores and take turns
   on measured drills (one mic can't tell two guitars apart).
 - If the last session was marked "something hurt", the next one defaults
   to 10 minutes, low energy.
+- Every block has one set of controls at the top (Back, Pause, Next). Don't
+  add a second timer or pause inside a block.
+- Fun block: the idea, a how-to/backing-track link, two swaps, and "Or play
+  a song" from `src/content/song-ideas.ts` (YouTube lesson searches, never
+  hard-coded video links).
 
 ## Design tokens (src/app/globals.css)
 Gig poster look, chosen by Ben and Anna: hot yellow `--bg`, black `--ink`,

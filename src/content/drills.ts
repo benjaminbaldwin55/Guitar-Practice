@@ -83,6 +83,8 @@ export interface FunIdea {
   solo?: boolean; // only for one person
   chill?: boolean; // good for low energy
   scale?: string;
+  /** YouTube search for a how-to or a backing track. */
+  watch?: { label: string; query: string };
 }
 
 export const FUN: FunIdea[] = [
@@ -92,12 +94,14 @@ export const FUN: FunIdea[] = [
     how: "Record four bars of Em to G on the RC-1. Then play over it with the E minor pentatonic. There are no wrong notes in that box.",
     needs: ["Em", "G"],
     scale: "em-pent-open",
+    watch: { label: "How to use the RC-1 looper", query: "Boss RC-1 loop station beginner tutorial guitar" },
   },
   {
     id: "dirty-slow",
     title: "Make it sound like 1992",
     how: "Kick on the DS-1. Play Em and G with big, slow down strums and let them ring into each other. Loud is the point.",
     needs: ["Em", "G"],
+    watch: { label: "Grunge tone with a DS-1", query: "Boss DS-1 grunge tone settings" },
   },
   {
     id: "pent-noodle",
@@ -105,6 +109,7 @@ export const FUN: FunIdea[] = [
     how: "Metronome at 70. Wander around the A minor pentatonic box. Try bending a note on the G or B string. No plan, just sound.",
     scale: "am-pent-1",
     chill: true,
+    watch: { label: "Play over a backing track", query: "A minor blues backing track slow" },
   },
   {
     id: "play-what-you-know",
@@ -119,6 +124,7 @@ export const FUN: FunIdea[] = [
     how: "One of you strums the four-chord loop, the other sings any melody that fits. Hum if you don't know the words. Swap after a few rounds.",
     needs: ["G", "D", "Em", "C"],
     together: true,
+    watch: { label: "Singing while strumming tips", query: "how to sing and play guitar at the same time beginner" },
   },
   {
     id: "call-response",
@@ -126,6 +132,7 @@ export const FUN: FunIdea[] = [
     how: "One plays a short 3 or 4 note phrase in the A minor pentatonic box, the other copies it by ear. Take turns leading.",
     scale: "am-pent-1",
     together: true,
+    watch: { label: "A minor backing track", query: "A minor pentatonic jam track slow" },
   },
   {
     id: "rhythm-and-lead",
@@ -135,11 +142,13 @@ export const FUN: FunIdea[] = [
     scale: "em-pent-open",
     together: true,
     chill: true,
+    watch: { label: "E minor backing track", query: "E minor backing track slow rock" },
   },
   {
     id: "tone-tweak",
     title: "Tone hunt",
     how: "Strum one chord you love and play with the THR10II and the Yellow Fall delay until it sounds like a record you like. Snap a photo of the knobs.",
     chill: true,
+    watch: { label: "THR10II tone tips", query: "Yamaha THR10II tone tutorial" },
   },
 ];

@@ -4,10 +4,28 @@
 - Stay a Little Longer: Brothers Osborne (solo included)
 
 ## Wishlist
-_The coach will suggest beginner-friendly picks from his taste. Old candidates:_
-- About a Girl: Nirvana (Em and G mostly, clean tone)
+_Mirrored in `src/content/song-ideas.ts`, which feeds the "Or play a song" box
+in the fun block. Update both together._
+
+Easy
+- Something in the Way: Nirvana
+- Come As You Are: Nirvana (riff)
+- Polly: Nirvana
+
+A stretch
+- About a Girl: Nirvana
+- One Headlight: The Wallflowers
+- Lightning Crashes: Live
+- Far Behind: Candlebox
+- Rooster: Alice in Chains (riff)
+- Learn to Fly: Foo Fighters
+- 1979: Smashing Pumpkins
+- Shelf in the Room: Days of the New (finish it)
+
+Goals
+- Interstate Love Song: Stone Temple Pilots
+- Slow Dancing in a Burning Room: John Mayer
 - Plush: Stone Temple Pilots
-- Glycerine: Bush
 
 ## In progress
 _none_
