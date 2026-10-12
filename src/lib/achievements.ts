@@ -319,6 +319,10 @@ const CATALOG: Def[] = [
   { id: "duo-streak", group: "together", owner: "together", title: "Duo week", desc: "Play together on enough days to hit the weekly goal.", badge: "1w", target: 1, measure: weekStreak },
 
   // On the horizon: shown locked so the long road is visible.
+  { id: "first-lick", group: "ahead", title: "First lick", desc: "Learn a lick and nail it at tempo.", badge: "~", target: 1, future: "Arrives with the lead track", measure: notYet },
+  { id: "in-tune-bend", group: "ahead", title: "In-tune bend", desc: "Three bends that land within 10 cents of the target.", badge: "↗", target: 1, future: "Arrives with the lead track", measure: notYet },
+  { id: "echo", group: "ahead", title: "Echo", desc: "Play back 10 call-and-response phrases correctly.", badge: "10", target: 1, future: "Arrives with call and response", measure: notYet },
+  { id: "five-boxes", group: "ahead", title: "All five boxes", desc: "Play every pentatonic box, connected.", badge: "5", target: 1, future: "Arrives with the lead track", measure: notYet },
   { id: "first-song", group: "ahead", title: "First full song", desc: "Play a whole song start to finish.", badge: "♪", target: 1, future: "Arrives with Songs", measure: notYet },
   { id: "first-barre", group: "ahead", title: "Barre none", desc: "Play a clean F barre chord.", badge: "F", target: 1, future: "Arrives with barre chords", measure: notYet },
   { id: "by-ear", group: "ahead", title: "By ear", desc: "Figure out a riff by ear.", badge: "♫", target: 1, future: "Arrives with ear training", measure: notYet },

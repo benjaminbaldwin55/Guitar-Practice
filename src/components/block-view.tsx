@@ -68,7 +68,7 @@ function TempoTrail({
   onNailed: (bpm: number) => Promise<void>;
 }) {
   return (
-    <div className="mt-8 rounded-[min(var(--r),20px)] border-(length:--bw) border-ink p-5">
+    <div className="candy mt-8 rounded-[min(var(--r),20px)] border-(length:--bw) border-ink p-5">
       <p className="text-sm text-ink-dim">
         {last
           ? `Last time you went from ${last.start} to ${Math.max(last.start, last.top)} BPM, so today starts halfway, at ${startBpm}.`
@@ -160,7 +160,7 @@ function FunBlock({
         )}
       </div>
 
-      <aside className="self-start rounded-[min(var(--r),20px)] border-(length:--bw) border-ink bg-surface p-5">
+      <aside className="candy self-start rounded-[min(var(--r),20px)] border-(length:--bw) border-ink bg-surface p-5">
         <h3 className="text-xl font-black" style={{ fontStretch: "115%" }}>
           Or play a song
         </h3>
@@ -233,7 +233,7 @@ export function BlockView({
       />
     ) : null;
   const metroBox = (
-    <div className="self-start rounded-[min(var(--r),20px)] border-(length:--bw) border-ink bg-surface p-5">
+    <div className="candy self-start rounded-[min(var(--r),20px)] border-(length:--bw) border-ink bg-surface p-5">
       <MetronomePanel api={metro} compact />
     </div>
   );

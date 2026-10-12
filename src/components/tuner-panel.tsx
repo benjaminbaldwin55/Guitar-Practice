@@ -174,7 +174,7 @@ function AddTuning({
     setCustom((c) => c.map((m, j) => (j === i ? Math.max(c[i] - 5, Math.min(c[i] + 5, m + d)) : m)));
 
   return (
-    <div className="mt-4 rounded-[min(var(--r),20px)] border-(length:--bw) border-ink bg-surface p-5">
+    <div className="candy mt-4 rounded-[min(var(--r),20px)] border-(length:--bw) border-ink bg-surface p-5">
       <h3 className="font-semibold">Add a tuning</h3>
       <ul className="mt-3 grid gap-2 sm:grid-cols-2">
         {TUNINGS.map((t) => {

@@ -165,7 +165,7 @@ export default function SettingsPage() {
           </div>
 
           {pending && (
-            <div className="mt-6 rounded-[min(var(--r),20px)] border-(length:--bw) border-ink bg-surface p-5">
+            <div className="candy mt-6 rounded-[min(var(--r),20px)] border-(length:--bw) border-ink bg-surface p-5">
               <p>
                 Backup from{" "}
                 {new Date(pending.exportedAt).toLocaleDateString(undefined, {

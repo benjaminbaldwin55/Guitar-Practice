@@ -79,7 +79,16 @@ vary every session, keep a milestone 1 or 2 sessions away, measure things.
 - Shuffle passes the current plan as `avoid` to the builder, so every block
   changes where an alternative exists.
 
+## Lead guitar
+Soloing is its own track from the start (see ROADMAP.md "lead guitar
+track"), not a late-stage extra. Ben's north star is lead playing.
+
 ## Design tokens (src/app/globals.css)
+In progress: three "modern candy shop" candidates (gumball, taffy,
+licorice) via `data-theme`, waiting on Ben and Anna's pick. Kept from the
+poster look by request: Archivo, and the tilted stickers with hard offset
+shadows, now a system (`.candy`, `.candy-sm`, `.press`, `--shadow-c`).
+
 Gig poster look, chosen by Ben and Anna: hot yellow `--bg`, black `--ink`,
 tomato red `--action`, thick black lines (`--bw`). `--live` only for live
 states (tuner on, recording). Player colors: Ben blue `--ben`, Anna purple

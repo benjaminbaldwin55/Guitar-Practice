@@ -58,7 +58,9 @@ export default function Home() {
                 onClick={() => setActiveWho(who)}
                 aria-pressed={selected}
                 disabled={!ready}
-                className="group grid w-full grid-cols-1 items-end gap-4 rounded-[min(var(--r),28px)] px-4 py-5 text-left transition-colors sm:grid-cols-[1fr_auto] md:px-6 md:py-7"
+                className={`group grid w-full grid-cols-1 items-end gap-4 rounded-[min(var(--r),28px)] px-4 py-5 text-left transition-[transform,background-color] sm:grid-cols-[1fr_auto] md:px-6 md:py-7 ${
+                  selected ? "candy -rotate-1 border-(length:--bw) border-ink" : "border-(length:--bw) border-transparent"
+                }`}
                 style={
                   selected
                     ? ({
@@ -116,7 +118,7 @@ export default function Home() {
         {active ? (
           <Link
             href="/practice"
-            className="rounded-(--r) border-(length:--bw) border-ink bg-action px-7 py-4 text-lg font-semibold text-action-ink transition-colors hover:bg-action-hi"
+            className="candy-sm press rounded-(--r) border-(length:--bw) border-ink bg-action px-7 py-4 text-lg font-semibold text-action-ink hover:bg-action-hi"
           >
             Start practice
           </Link>

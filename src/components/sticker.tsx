@@ -33,7 +33,7 @@ export function Sticker({
     <div
       aria-hidden
       className={`flex shrink-0 items-center justify-center rounded-[22%] border-(length:--bw) ${
-        unlocked ? "border-ink shadow-[4px_4px_0_0_var(--ink)]" : "border-dashed border-ink-faint text-ink-faint"
+        unlocked ? "candy border-ink" : "border-dashed border-ink-faint text-ink-faint"
       } ${pop ? "motion-safe:animate-[sticker-pop_600ms_cubic-bezier(.2,1.6,.4,1)_both]" : ""}`}
       style={{
         width: size,

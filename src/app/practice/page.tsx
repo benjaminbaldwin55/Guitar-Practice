@@ -501,7 +501,7 @@ export default function PracticePage() {
       </div>
 
       {drawer !== "none" && (
-        <div className="mt-4 rounded-[min(var(--r),20px)] border-(length:--bw) border-ink bg-surface p-5 md:p-7">
+        <div className="candy mt-4 rounded-[min(var(--r),20px)] border-(length:--bw) border-ink bg-surface p-5 md:p-7">
           {drawer === "tuner" ? <TunerPanel compact /> : <MetronomePanel api={metro} compact />}
         </div>
       )}

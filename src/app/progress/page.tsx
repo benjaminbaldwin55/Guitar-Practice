@@ -77,7 +77,7 @@ export default function ProgressPage() {
       </div>
 
       {almost.length > 0 && (
-        <section className="mt-10 rounded-[min(var(--r),20px)] border-(length:--bw) border-ink bg-surface p-5 md:p-6">
+        <section className="candy mt-10 rounded-[min(var(--r),20px)] border-(length:--bw) border-ink bg-surface p-5 md:p-6">
           <h2 className="text-xl font-black" style={{ fontStretch: "115%" }}>
             Almost there
           </h2>

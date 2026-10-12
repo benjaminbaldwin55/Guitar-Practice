@@ -6,8 +6,8 @@ const base =
   "inline-flex items-center justify-center gap-2 rounded-(--r) border-(length:--bw) font-semibold transition-colors disabled:opacity-40 disabled:pointer-events-none";
 
 const variants: Record<Variant, string> = {
-  primary: "border-ink bg-action text-action-ink hover:bg-action-hi",
-  quiet: "border-ink bg-transparent text-ink hover:bg-surface",
+  primary: "candy-sm press border-ink bg-action text-action-ink hover:bg-action-hi",
+  quiet: "candy-sm press border-ink bg-surface text-ink hover:bg-surface-2",
   ghost: "border-transparent text-ink-dim hover:text-ink",
   danger: "border-ink bg-transparent text-ink hover:bg-live hover:text-action-ink",
 };
@@ -47,8 +47,8 @@ export function Chip({
     <button
       type="button"
       aria-pressed={on}
-      className={`rounded-(--r) border-(length:--bw) border-ink px-4 py-2 font-semibold transition-colors ${
-        on ? "bg-ink text-bg" : "bg-transparent text-ink hover:bg-surface"
+      className={`press rounded-(--r) border-(length:--bw) border-ink px-4 py-2 font-semibold transition-colors ${
+        on ? "candy-sm bg-ink text-bg" : "bg-surface text-ink hover:bg-surface-2"
       } ${className}`}
       {...rest}
     >
@@ -73,7 +73,7 @@ export function Panel({
 }) {
   return (
     <div
-      className={`rounded-[min(var(--r),20px)] border-(length:--bw) border-ink bg-surface p-5 md:p-7 ${className}`}
+      className={`candy rounded-[min(var(--r),20px)] border-(length:--bw) border-ink bg-surface p-5 md:p-7 ${className}`}
     >
       {children}
     </div>

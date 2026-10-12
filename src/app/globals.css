@@ -28,6 +28,90 @@
   --on-both: #000000;
   --bw: 3px;
   --r: 8px;
+  --shadow-c: #000000;
+  --sprinkles: none;
+}
+
+/*
+  Candy shop candidates (temporary, while Ben and Anna pick one).
+  Same fonts and sticker shadows; different wrappers.
+*/
+[data-theme="gumball"] {
+  --bg: #fff6fa;
+  --surface: #ffffff;
+  --surface-2: #ffe6f1;
+  --line: #22112b;
+  --ink: #22112b;
+  --ink-dim: #5d4a63;
+  --ink-faint: #a796ad;
+  --action: #ff4f9f;
+  --action-hi: #ff70b2;
+  --action-ink: #22112b;
+  --live: #ff2d55;
+  --good: #00965f;
+  --ben: #2f6bff;
+  --anna: #9a4dff;
+  --both: #ff7a1a;
+  --on-ben: #ffffff;
+  --on-anna: #ffffff;
+  --on-both: #22112b;
+  --bw: 2.5px;
+  --r: 14px;
+  --shadow-c: #22112b;
+  --sprinkles: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cg fill-opacity='.28'%3E%3Crect x='20' y='30' width='14' height='5' rx='2.5' fill='%23ff4f9f' transform='rotate(35 27 32)'/%3E%3Crect x='120' y='18' width='14' height='5' rx='2.5' fill='%232f6bff' transform='rotate(-20 127 20)'/%3E%3Crect x='210' y='60' width='14' height='5' rx='2.5' fill='%2300c48c' transform='rotate(70 217 62)'/%3E%3Crect x='70' y='110' width='14' height='5' rx='2.5' fill='%23ffb020' transform='rotate(-50 77 112)'/%3E%3Crect x='170' y='150' width='14' height='5' rx='2.5' fill='%239a4dff' transform='rotate(15 177 152)'/%3E%3Crect x='30' y='200' width='14' height='5' rx='2.5' fill='%2300c48c' transform='rotate(-75 37 202)'/%3E%3Crect x='230' y='220' width='14' height='5' rx='2.5' fill='%23ff4f9f' transform='rotate(55 237 222)'/%3E%3Crect x='120' y='235' width='14' height='5' rx='2.5' fill='%23ff7a1a' transform='rotate(-30 127 237)'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+[data-theme="taffy"] {
+  --bg: #ffd6e7;
+  --surface: #ffebf3;
+  --surface-2: #fff6fa;
+  --line: #2a0f33;
+  --ink: #2a0f33;
+  --ink-dim: #5e3b66;
+  --ink-faint: #a0759f;
+  --action: #19d3a2;
+  --action-hi: #3fe0b5;
+  --action-ink: #2a0f33;
+  --live: #ff2d55;
+  --good: #007a54;
+  --ben: #2a5bff;
+  --anna: #8a3ffc;
+  --both: #ff6a3d;
+  --on-ben: #ffffff;
+  --on-anna: #ffffff;
+  --on-both: #2a0f33;
+  --bw: 2.5px;
+  --r: 18px;
+  --shadow-c: #2a0f33;
+  --sprinkles: none;
+}
+
+[data-theme="licorice"] {
+  --bg: #1b1222;
+  --surface: #271b30;
+  --surface-2: #33253d;
+  --line: #f7e9f2;
+  --ink: #fff4fa;
+  --ink-dim: #cdb8cf;
+  --ink-faint: #8d7896;
+  --action: #ff5fa8;
+  --action-hi: #ff7fbb;
+  --action-ink: #1b1222;
+  --live: #ff4060;
+  --good: #3ee39c;
+  --ben: #5b8cff;
+  --anna: #b57cff;
+  --both: #ffb020;
+  --on-ben: #0f0a14;
+  --on-anna: #0f0a14;
+  --on-both: #0f0a14;
+  --bw: 2.5px;
+  --r: 14px;
+  --shadow-c: #ff5fa8;
+  --sprinkles: none;
+}
+[data-theme="licorice"] {
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -54,7 +138,8 @@ html {
 }
 
 body {
-  background: var(--bg);
+  background-color: var(--bg);
+  background-image: var(--sprinkles);
   color: var(--ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -89,11 +174,28 @@ body {
 
 /* Flip ink and paper inside a box, e.g. the chord the app hears. */
 .flip-ink {
-  --ink: #ffe03d;
-  --ink-dim: #fff4b8;
-  --bg: #000000;
-  background: #000000;
-  color: #ffe03d;
+  --flip-ink: var(--bg);
+  --flip-bg: var(--ink);
+  background: var(--flip-bg);
+  color: var(--flip-ink);
+}
+.flip-ink svg {
+  color: var(--flip-ink);
+}
+
+/* The hard, offset shadow Ben liked on the stickers, used across the app. */
+.candy {
+  box-shadow: 4px 4px 0 0 var(--shadow-c);
+}
+.candy-sm {
+  box-shadow: 3px 3px 0 0 var(--shadow-c);
+}
+.press {
+  transition: transform 80ms ease, box-shadow 80ms ease;
+}
+.press:active {
+  transform: translate(3px, 3px);
+  box-shadow: none;
 }
 
 /* An achievement sticker landing on the poster. */
