@@ -17,8 +17,8 @@ const ITEMS = [
 function whoColor(who: string | null) {
   if (who === "ben") return "var(--ben)";
   if (who === "anna") return "var(--anna)";
-  if (who === "both") return "var(--brass)";
-  return "var(--pearl-faint)";
+  if (who === "both") return "var(--both)";
+  return "var(--ink-faint)";
 }
 
 export function Nav() {
@@ -29,10 +29,10 @@ export function Nav() {
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-rosewood-2/95 backdrop-blur md:sticky md:top-0 md:h-dvh md:w-52 md:shrink-0 md:border-t-0 md:border-r md:bg-rosewood-2"
+      className="fixed inset-x-0 bottom-0 z-10 border-t-(length:--bw) border-line bg-surface md:sticky md:top-0 md:h-dvh md:w-52 md:shrink-0 md:border-t-0 md:border-r-(length:--bw)"
     >
       <div className="hidden px-6 pt-10 pb-8 md:block">
-        <p className="text-sm text-pearl-faint">Playing now</p>
+        <p className="text-sm text-ink-faint">Playing now</p>
         <p
           className="mt-1 text-lg font-semibold"
           style={{ color: whoColor(who), fontStretch: "112%" }}
@@ -48,10 +48,10 @@ export function Nav() {
               <Link
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className={`block rounded-md px-2 py-3 text-xs transition-colors sm:text-sm md:px-3 md:py-2 md:text-[15px] ${
+                className={`block rounded-[min(var(--r),12px)] px-2 py-3 text-xs transition-colors sm:text-sm md:px-3 md:py-2 md:text-[15px] ${
                   active
-                    ? "text-brass-hi md:bg-rosewood-3"
-                    : "text-pearl-dim hover:text-pearl"
+                    ? "font-semibold text-ink md:bg-surface-2"
+                    : "text-ink-dim hover:text-ink"
                 }`}
               >
                 {label}

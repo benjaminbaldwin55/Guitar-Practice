@@ -20,7 +20,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="border-t border-line py-8">
+    <section className="border-t-(length:--bw) border-line py-8">
       <h2 className="text-xl font-semibold" style={{ fontStretch: "112%" }}>
         {title}
       </h2>
@@ -30,9 +30,9 @@ function Section({
 }
 
 const btn =
-  "rounded-md px-4 py-2.5 font-medium transition-colors disabled:opacity-50";
-const btnPrimary = `${btn} bg-brass text-rosewood hover:bg-brass-hi`;
-const btnQuiet = `${btn} border border-line text-pearl hover:border-pearl-faint`;
+  "rounded-(--r) border-(length:--bw) border-ink px-5 py-2.5 font-semibold transition-colors disabled:opacity-50";
+const btnPrimary = `${btn} bg-action text-action-ink hover:bg-action-hi`;
+const btnQuiet = `${btn} bg-transparent text-ink hover:bg-surface`;
 
 export default function SettingsPage() {
   const { store, settings, updateSettings, dataChanged } = useApp();
@@ -104,7 +104,7 @@ export default function SettingsPage() {
 
       <div className="mt-10">
         <Section title="Weekly goal">
-          <p className="text-pearl-dim">
+          <p className="text-ink-dim">
             Days a week you each aim to play. Rest days never break a streak,
             only missed weeks do.
           </p>
@@ -134,7 +134,7 @@ export default function SettingsPage() {
         </Section>
 
         <Section title="Backup">
-          <p className="text-pearl-dim">
+          <p className="text-ink-dim">
             Everything is saved in this browser on this computer. Download a
             backup now and then so your progress never depends on one browser.
           </p>
@@ -165,7 +165,7 @@ export default function SettingsPage() {
           </div>
 
           {pending && (
-            <div className="mt-6 rounded-md border border-line bg-rosewood-2 p-5">
+            <div className="mt-6 rounded-[min(var(--r),20px)] border-(length:--bw) border-ink bg-surface p-5">
               <p>
                 Backup from{" "}
                 {new Date(pending.exportedAt).toLocaleDateString(undefined, {
@@ -175,7 +175,7 @@ export default function SettingsPage() {
                 {pending.measurements.length} measurements,{" "}
                 {pending.recordings.length} recordings.
               </p>
-              <p className="mt-2 text-sm text-pearl-dim">
+              <p className="mt-2 text-sm text-ink-dim">
                 Add keeps what&apos;s here and adds the backup on top. Replace
                 deletes everything here first.
               </p>
@@ -190,7 +190,7 @@ export default function SettingsPage() {
                 </button>
                 <button
                   type="button"
-                  className={`${btnQuiet} hover:border-jewel hover:text-jewel`}
+                  className={`${btnQuiet} hover:bg-live hover:text-action-ink`}
                   onClick={() => restore("replace")}
                   disabled={busy}
                 >
@@ -198,7 +198,7 @@ export default function SettingsPage() {
                 </button>
                 <button
                   type="button"
-                  className={`${btn} text-pearl-dim hover:text-pearl`}
+                  className={`${btn} border-transparent text-ink-dim hover:text-ink`}
                   onClick={() => setPending(null)}
                   disabled={busy}
                 >
@@ -211,7 +211,7 @@ export default function SettingsPage() {
           {status && (
             <p
               role="status"
-              className={`mt-4 text-sm ${status.kind === "error" ? "text-jewel" : "text-pearl-dim"}`}
+              className={`mt-4 text-sm ${status.kind === "error" ? "text-live" : "text-ink-dim"}`}
             >
               {status.text}
             </p>

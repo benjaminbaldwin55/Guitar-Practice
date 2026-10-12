@@ -20,14 +20,14 @@ export function WeekDots({
         return (
           <li key={k} className="flex flex-col items-center gap-1">
             <span
-              className="block size-3 rounded-full border"
+              className="block size-3.5 rounded-full border-2"
               style={{
                 background: on ? color : "transparent",
-                borderColor: on ? color : isToday ? "var(--pearl-dim)" : "var(--line)",
+                borderColor: on ? color : isToday ? "var(--ink)" : "var(--ink-faint)",
               }}
             />
             <span
-              className={`text-[10px] ${isToday ? "text-pearl" : "text-pearl-faint"}`}
+              className={`text-[10px] ${isToday ? "text-ink" : "text-ink-faint"}`}
               aria-hidden
             >
               {LETTERS[i]}
