@@ -9,8 +9,8 @@ You need Node.js (you already have it). The first time:
 
 ```bash
 cd ~/Documents
-git clone https://github.com/benjaminbaldwin55/guitar-practice.git
-cd guitar-practice
+git clone https://github.com/benjaminbaldwin55/Guitar-Practice.git
+cd Guitar-Practice
 npm install
 ```
 
