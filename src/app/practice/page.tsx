@@ -24,6 +24,9 @@ import { dayKey, daysThisWeek, practiceDays } from "@/lib/streaks";
 import type { Energy, Feel, PracticeSession } from "@/lib/types";
 import { bestsOf, lastTempos, useMeasurements } from "@/lib/use-measurements";
 import { useSessions } from "@/lib/use-sessions";
+import { Sticker } from "@/components/sticker";
+import { evaluate, historyFor, newlyUnlocked, type AchievementState, type Owner } from "@/lib/achievements";
+import { ownerColor } from "@/lib/use-achievements";
 
 type Stage = "setup" | "run" | "finish" | "done";
 
@@ -51,11 +54,13 @@ export default function PracticePage() {
   const { all: measurements, record } = useMeasurements();
   const who = settings.activeWho;
   const players = useMemo(() => (who ? playersFor(who) : []), [who]);
+  const owners = useMemo<Owner[]>(() => (players.length > 1 ? [...players, "together"] : players), [players]);
 
   const [stage, setStage] = useState<Stage>("setup");
   const [minutes, setMinutes] = useState<SessionLength>(20);
   const [energy, setEnergy] = useState<Energy>("normal");
   const [seed, setSeed] = useState(() => Date.now() % 100000);
+  const [avoid, setAvoid] = useState<string[]>([]); // what Shuffle steers away from
   const [blocks, setBlocks] = useState<PlannedBlock[]>([]);
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -68,6 +73,7 @@ export default function PracticePage() {
   const [newBests, setNewBests] = useState<string[]>([]);
   const [saved, setSaved] = useState<PracticeSession | null>(null);
   const sessionId = useRef(newId());
+  const before = useRef<Partial<Record<Owner, AchievementState[]>>>({}); // achievements when the session started
   const startedAt = useRef<string>("");
   const metro = useMetronome();
 
@@ -104,10 +110,10 @@ export default function PracticePage() {
 
   const plan = useMemo(() => {
     if (!players.length || !measurements) return [];
-    return buildSession({ players, minutes, energy, bests: changeBests, recentRefs, tempos, seed });
+    return buildSession({ players, minutes, energy, bests: changeBests, recentRefs, tempos, seed, avoid });
     // Rebuild only when the inputs that shape the plan change, not on every new tempo saved mid-session.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [players, minutes, energy, changeBests, recentRefs, seed, !!measurements]);
+  }, [players, minutes, energy, changeBests, recentRefs, seed, avoid, !!measurements]);
 
   // Session clock. Only runs while practicing and not paused.
   useEffect(() => {
@@ -152,6 +158,8 @@ export default function PracticePage() {
     setFeel(null);
     sessionId.current = newId();
     startedAt.current = new Date().toISOString();
+    before.current = {};
+    for (const o of owners) before.current[o] = evaluate(o, historyFor(o, sessions ?? [], measurements ?? [], settings));
     setStage("run");
   }
 
@@ -320,7 +328,14 @@ export default function PracticePage() {
           <Button variant="primary" size="lg" onClick={start} disabled={!plan.length}>
             Let&apos;s play
           </Button>
-          <Button size="lg" onClick={() => setSeed((s) => s + 1)}>
+          <Button
+            size="lg"
+            onClick={() => {
+              // Steer away from this plan (and the one before it) so Shuffle really changes things.
+              setAvoid((a) => [...plan.map((b) => b.ref!).filter(Boolean), ...a].slice(0, 16));
+              setSeed((s) => s + 1);
+            }}
+          >
             Shuffle
           </Button>
         </div>
@@ -371,6 +386,10 @@ export default function PracticePage() {
   // ---------- Done ----------
   if (stage === "done" && saved) {
     const allSessions = [...(sessions ?? []).filter((s) => s.id !== saved.id), saved];
+    const unlockedNow = owners.flatMap((o) => {
+      const after = evaluate(o, historyFor(o, allSessions, measurements ?? [], settings));
+      return newlyUnlocked(before.current[o] ?? [], after).map((st) => ({ owner: o, st }));
+    });
     return (
       <div>
         <PageTitle>Saved.</PageTitle>
@@ -394,6 +413,30 @@ export default function PracticePage() {
             );
           })}
         </ul>
+        {unlockedNow.length > 0 && (
+          <section className="mt-10">
+            <h2 className="display text-4xl">Unlocked!</h2>
+            <ul className="mt-6 flex flex-wrap gap-x-10 gap-y-8">
+              {unlockedNow.map(({ owner, st }) => {
+                const c = ownerColor(owner);
+                return (
+                  <li key={`${owner}:${st.def.id}`} className="flex w-72 items-center gap-4">
+                    <Sticker state={st} color={c.color} on={c.on} size={96} pop />
+                    <div>
+                      <p className="text-lg leading-tight font-bold">{st.def.title}</p>
+                      <p className="text-sm text-ink-dim">
+                        {owner === "together" ? "Together" : PLAYERS[owner].name}: {st.def.desc}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            <Link href="/progress" className="mt-6 inline-block font-semibold underline decoration-2 underline-offset-4">
+              See all achievements
+            </Link>
+          </section>
+        )}
         {newBests.length > 0 && (
           <>
             <h2 className="mt-10 text-xl font-semibold">New this session</h2>
@@ -496,7 +539,7 @@ export default function PracticePage() {
       )}
       {paused && <p className="mt-3 text-right font-semibold text-live">Paused</p>}
 
-      <div className="mt-10" key={idx}>
+      <div className="mt-10" key={`${idx}:${block.ref}`}>
         <BlockView
           block={block}
           players={players}
@@ -511,6 +554,20 @@ export default function PracticePage() {
           onJump={(sec) => setBlockTimes((bt) => bt.map((v, i) => (i === idx ? sec : v)))}
           onChangeSaved={onChangeSaved}
           onNailed={onNailed}
+          onTryPair={(pair) =>
+            setBlocks((bs) =>
+              bs.map((b, i) =>
+                i === idx
+                  ? {
+                      ...b,
+                      title: `${pair[0]} to ${pair[1]} changes`,
+                      ref: `changes:${pairId(pair)}`,
+                      payload: { type: "changes", pair, best: null, goal: 20 },
+                    }
+                  : b,
+              ),
+            )
+          }
           onSwapFun={(idea) =>
             setBlocks((bs) =>
               bs.map((b, i) =>

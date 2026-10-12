@@ -95,3 +95,17 @@ body {
   background: #000000;
   color: #ffe03d;
 }
+
+/* An achievement sticker landing on the poster. */
+@keyframes sticker-pop {
+  0% {
+    transform: scale(2.2) rotate(-18deg);
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(var(--tilt, -3deg));
+  }
+}

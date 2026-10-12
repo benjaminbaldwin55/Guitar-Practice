@@ -35,6 +35,8 @@ export interface BuildInput {
   bests: Partial<Record<PlayerId, Record<string, number>>>;
   /** Block refs from recent sessions, most recent first. */
   recentRefs: string[];
+  /** Refs to steer away from, e.g. the plan you just shuffled. Treated as "just did these". */
+  avoid?: string[];
   /** Last tempo run per player per block ref, for picking today's starting tempo. */
   tempos?: Partial<Record<PlayerId, Record<string, TempoRun>>>;
   seed: number;
@@ -103,7 +105,9 @@ const subset = (need: string[] | undefined, have: string[]) =>
   !need || need.every((c) => have.includes(c));
 
 export function buildSession(input: BuildInput): PlannedBlock[] {
-  const { players, minutes, energy, recentRefs } = input;
+  const { players, minutes, energy } = input;
+  const avoid = input.avoid ?? [];
+  const recentRefs = [...avoid, ...input.recentRefs];
   const rand = rng(input.seed);
   const together = players.length > 1;
   const bests = groupBests(players, input.bests);
@@ -142,7 +146,9 @@ export function buildSession(input: BuildInput): PlannedBlock[] {
   });
 
   // 2. Edge: the weakest open chord change, measured.
-  const edgePair = [...shuffle(rand, pairs)].sort((a, b) => {
+  // Shuffling away from a pair? Skip it if there's another open pair to work on.
+  const edgePool = pairs.filter((p) => !avoid.includes(`changes:${pairId(p)}`));
+  const edgePair = [...shuffle(rand, edgePool.length ? edgePool : pairs)].sort((a, b) => {
     const d = (bests[pairId(a)] ?? 0) - (bests[pairId(b)] ?? 0);
     if (d !== 0) return d;
     return (

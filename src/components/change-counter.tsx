@@ -31,11 +31,14 @@ export function ChangeCounter({
   players,
   bests,
   onSave,
+  onTryPair,
 }: {
   pair: [string, string];
   players: PlayerId[];
   bests: Bests;
   onSave: (r: ChangeResult) => Promise<void> | void;
+  /** Jump straight to a pair you just unlocked. */
+  onTryPair?: (pair: [string, string]) => void;
 }) {
   const id = pairId(pair);
   const counter = useChangeCounter(pair);
@@ -296,7 +299,12 @@ export function ChangeCounter({
               {UNLOCK_AT - result.value} more to unlock the next chord change.
             </p>
           )}
-          <div className="mt-6 flex justify-center gap-3">
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            {result.unlocked && onTryPair && turn >= players.length - 1 && (
+              <Button variant="primary" size="lg" onClick={() => onTryPair(result.unlocked!)}>
+                Try {result.unlocked[0]} ⇄ {result.unlocked[1]} now
+              </Button>
+            )}
             {turn < players.length - 1 ? (
               <Button variant="primary" size="lg" onClick={next}>
                 {PLAYERS[players[turn + 1]].name}&apos;s turn

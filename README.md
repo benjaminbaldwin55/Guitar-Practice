@@ -46,8 +46,12 @@ then.
 
 ## Build plan
 
+The long view, beginner to advanced, is in [ROADMAP.md](ROADMAP.md).
+
+
 - [x] **Phase 0: Setup.** App shell, `/me` profiles, local saving, backup
 - [x] **Phase 1: Usable app.** Tuner, metronome, warm-ups, session builder, chord-change counter, logging
+- [x] **Phase 1.5:** Accurate tuner and chord counter, achievements, real shuffle
 - [ ] **Phase 2: Progress engine.** Skill tree, measured drills, song milestones, stats
 - [ ] **Phase 3: Together.** Duet mode, shared goals, recordings, ear training
 - [ ] **Phase 4: Extras.** Drum machine, tone presets, weekly coach review

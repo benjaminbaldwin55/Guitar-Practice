@@ -200,6 +200,7 @@ export function BlockView({
   onChangeSaved,
   onNailed,
   onSwapFun,
+  onTryPair,
 }: {
   block: PlannedBlock;
   players: PlayerId[];
@@ -215,6 +216,7 @@ export function BlockView({
   onChangeSaved: (r: ChangeResult, pair: [string, string]) => Promise<void>;
   onNailed: (bpm: number) => Promise<void>;
   onSwapFun: (idea: FunIdea) => void;
+  onTryPair: (pair: [string, string]) => void;
 }) {
   const p = block.payload;
   const best = block.ref ? Math.min(...players.map((pl) => bpmBests[pl][block.ref!] ?? Infinity)) : Infinity;
@@ -248,6 +250,7 @@ export function BlockView({
             players={players}
             bests={changeBests}
             onSave={(r) => onChangeSaved(r, p.pair)}
+            onTryPair={onTryPair}
           />
           <p className="mt-8 text-center">
             <LessonLink query={`${p.pair[0]} to ${p.pair[1]} chord change guitar beginner`} label="Tips for this switch" />

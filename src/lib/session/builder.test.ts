@@ -121,3 +121,18 @@ describe("tempo carry-over in sessions", () => {
     }
   });
 });
+
+describe("shuffle", () => {
+  it("changes most of the plan when there are alternatives", () => {
+    for (const minutes of [10, 20, 30] as const) {
+      for (let seed = 0; seed < 20; seed++) {
+        const first = buildSession({ ...base, minutes, seed });
+        const second = buildSession({ ...base, minutes, seed: seed + 1, avoid: first.map((b) => b.ref!) });
+        const changed = first.filter((b, i) => b.kind !== "break" && b.ref !== second[i]?.ref).length;
+        const compared = first.filter((b) => b.kind !== "break").length;
+        // Warm-up, chord pair, middle block(s) and fun should all move on day one.
+        expect(changed).toBe(compared);
+      }
+    }
+  });
+});

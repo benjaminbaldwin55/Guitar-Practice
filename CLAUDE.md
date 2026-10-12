@@ -1,7 +1,8 @@
 # Guitar Practice: notes for Claude
 
 A practice and teaching app for two beginner guitarists, Ben and Anna, who
-learn together and also work on their own songs.
+learn together and also work on their own songs. It's meant to carry them
+from beginner to advanced over years: see ROADMAP.md for the stages.
 
 ## Read first
 - `me/` holds who they are. Read the relevant `profile.md` and `coaching.md`
@@ -65,6 +66,18 @@ vary every session, keep a milestone 1 or 2 sessions away, measure things.
 - Fun block: the idea, a how-to/backing-track link, two swaps, and "Or play
   a song" from `src/content/song-ideas.ts` (YouTube lesson searches, never
   hard-coded video links).
+
+## Achievements
+- `src/lib/achievements.ts`: a catalog of tiered ladders (sessions, hours,
+  streaks, chord changes, speed, explorer, together, plus locked "on the
+  horizon" goals). They're computed from sessions and measurements, never
+  stored, so new ones credit past practice. Player ones are earned by Ben
+  and Anna separately; together ones only count duo sessions.
+- When adding a feature, add its achievements too (see ROADMAP.md), and
+  flip any matching "future" achievement to a real measure.
+- The Saved screen diffs achievements from session start to show unlocks.
+- Shuffle passes the current plan as `avoid` to the builder, so every block
+  changes where an alternative exists.
 
 ## Design tokens (src/app/globals.css)
 Gig poster look, chosen by Ben and Anna: hot yellow `--bg`, black `--ink`,

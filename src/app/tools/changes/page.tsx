@@ -50,6 +50,7 @@ export default function ChangesPage() {
             pair={pair}
             players={players}
             bests={bests}
+            onTryPair={(p) => setChosen(pairId(p))}
             onSave={(r) =>
               record({
                 playerId: r.player,

@@ -10,7 +10,7 @@ const ITEMS = [
   { href: "/practice", label: "Practice" },
   { href: "/tools", label: "Tools" },
   { href: "/songs", label: "Songs" },
-  { href: "/progress", label: "Progress" },
+  { href: "/progress", label: "Achievements" },
   { href: "/settings", label: "Settings" },
 ];
 
