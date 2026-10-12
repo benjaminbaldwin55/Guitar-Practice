@@ -77,7 +77,7 @@ export function TunerPanel({ compact = false }: { compact?: boolean }) {
             <li
               key={i}
               className={`flex flex-col items-center rounded-(--r) border-(length:--bw) border-ink py-3 transition-colors ${
-                active ? (inTune ? "bg-good text-white" : "bg-ink text-bg") : ""
+                active ? (inTune ? "bg-good text-bg" : "bg-ink text-bg") : ""
               }`}
             >
               <span className="text-xl font-bold" style={{ fontStretch: "115%" }}>

@@ -40,14 +40,14 @@ export function WarmupRunner({
                 type="button"
                 onClick={() => onJump(starts[n])}
                 className={`w-full rounded-[min(var(--r),16px)] border-(length:--bw) border-ink p-4 text-left transition-colors md:p-5 ${
-                  on ? "bg-ink text-bg" : done ? "opacity-50 hover:opacity-80" : "hover:bg-surface"
+                  on ? "candy -rotate-[0.6deg] border-action bg-surface-2" : done ? "opacity-50 hover:opacity-80" : "hover:bg-surface"
                 }`}
               >
                 <span className="flex items-baseline justify-between gap-4">
                   <span className="text-xl font-bold">{s.title}</span>
                   <span className="num font-semibold">{on ? `${left}s` : done ? "Done" : `${s.seconds}s`}</span>
                 </span>
-                <span className={`mt-1 block ${on ? "" : "text-ink-dim"}`}>{s.how}</span>
+                <span className={`mt-1 block ${on ? "text-ink" : "text-ink-dim"}`}>{s.how}</span>
               </button>
             </li>
           );

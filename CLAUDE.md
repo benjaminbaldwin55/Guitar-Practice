@@ -84,17 +84,14 @@ Soloing is its own track from the start (see ROADMAP.md "lead guitar
 track"), not a late-stage extra. Ben's north star is lead playing.
 
 ## Design tokens (src/app/globals.css)
-In progress: three "modern candy shop" candidates (gumball, taffy,
-licorice) via `data-theme`, waiting on Ben and Anna's pick. Kept from the
-poster look by request: Archivo, and the tilted stickers with hard offset
-shadows, now a system (`.candy`, `.candy-sm`, `.press`, `--shadow-c`).
-
-Gig poster look, chosen by Ben and Anna: hot yellow `--bg`, black `--ink`,
-tomato red `--action`, thick black lines (`--bw`). `--live` only for live
-states (tuner on, recording). Player colors: Ben blue `--ben`, Anna purple
-`--anna`, together red `--both`; text on them uses `--on-*`. Archivo, wide and
-heavy (`.display`), for names and big numbers only. Bold and bright, never
-washed out.
+"Licorice", picked by Ben and Anna: a modern candy shop at night. Dark plum
+`--bg`, light `--ink`, candy colors only where they mean something:
+bubblegum `--action`, player colors Ben blue raspberry `--ben`, Anna grape
+`--anna`, together butterscotch `--both` (text on them uses `--on-*`).
+`--live` only for live states, `--good` for success. The signature: tilted
+stickers and hard offset shadows that glow pink (`.candy`, `.candy-sm`,
+`.press`, `--shadow-c`). Archivo, wide and heavy (`.display`), for names and
+big numbers only. Bold, not busy: no gradients, no extra decoration.
 
 ## Style for copy
 Casual and plain. No em dashes.
