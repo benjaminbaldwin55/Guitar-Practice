@@ -2,14 +2,11 @@
 @import "tailwindcss";
 
 /*
-  Theme tokens. Three candidate palettes while Ben picks one:
-    poster  screen-printed gig poster: hot yellow, black ink, tomato red
-    pedal   pedalboard: white, black outlines, Boss orange, Yellow Fall yellow
-    fender  Fender custom colors: seafoam, Fiesta red, Lake Placid blue
-  Set with <html data-theme="...">. Default is poster.
+  Gig poster palette: hot yellow paper, black ink, tomato red.
+  live is for live states only (tuner on, recording).
+  Player colors: Ben blue, Anna purple, together red.
 */
-:root,
-[data-theme="poster"] {
+:root {
   --bg: #ffe03d;
   --surface: #ffeb85;
   --surface-2: #fff4b8;
@@ -29,50 +26,6 @@
   --on-both: #000000;
   --bw: 3px;
   --r: 8px;
-}
-
-[data-theme="pedal"] {
-  --bg: #ffffff;
-  --surface: #f1f1ee;
-  --surface-2: #e4e4df;
-  --line: #000000;
-  --ink: #000000;
-  --ink-dim: #3f3f3f;
-  --ink-faint: #9b9b9b;
-  --action: #ff6a13;
-  --action-hi: #ff8236;
-  --action-ink: #000000;
-  --live: #e4002b;
-  --ben: #1e6bff;
-  --anna: #8e3bff;
-  --both: #ffc400;
-  --on-ben: #ffffff;
-  --on-anna: #ffffff;
-  --on-both: #000000;
-  --bw: 3px;
-  --r: 14px;
-}
-
-[data-theme="fender"] {
-  --bg: #b9e6d2;
-  --surface: #a3dbc2;
-  --surface-2: #8fd1b3;
-  --line: #12302a;
-  --ink: #12302a;
-  --ink-dim: #2f5249;
-  --ink-faint: #5f8a7e;
-  --action: #e8382c;
-  --action-hi: #f04f43;
-  --action-ink: #ffffff;
-  --live: #e8382c;
-  --ben: #1d4fa6;
-  --anna: #7a2a92;
-  --both: #f08a12;
-  --on-ben: #ffffff;
-  --on-anna: #ffffff;
-  --on-both: #12302a;
-  --bw: 2px;
-  --r: 999px;
 }
 
 @theme inline {

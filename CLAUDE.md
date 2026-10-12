@@ -34,10 +34,12 @@ vary every session, keep a milestone 1 or 2 sessions away, measure things.
 - Run `npm test`, `npm run lint`, `npm run build` before committing.
 
 ## Design tokens (src/app/globals.css)
-rosewood (base), pearl (text), brass (actions), jewel (live states only:
-tuner on, recording). Player colors: Ben = denim `--ben`, Anna = purple burst
-`--anna`, together = brass. Archivo, wide and heavy (`.display`) for names and
-big numbers only.
+Gig poster look, chosen by Ben and Anna: hot yellow `--bg`, black `--ink`,
+tomato red `--action`, thick black lines (`--bw`). `--live` only for live
+states (tuner on, recording). Player colors: Ben blue `--ben`, Anna purple
+`--anna`, together red `--both`; text on them uses `--on-*`. Archivo, wide and
+heavy (`.display`), for names and big numbers only. Bold and bright, never
+washed out.
 
 ## Style for copy
 Casual and plain. No em dashes.
