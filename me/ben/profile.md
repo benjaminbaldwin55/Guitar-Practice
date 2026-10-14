@@ -42,3 +42,13 @@ updated: 2026-10-12
 - **Likes:** stats, streaks, measurable progress
 - **Prefers:** a mix of structured lessons and jumping into songs
 - **With Anna:** cooperative, not competitive. Hopes to practice together most of the time.
+
+## Still to ask Ben (added when Anna got her questionnaire)
+- Pick, fingers, or both? Any preference yet?
+- Learn better by ear, by watching someone, or by reading (tab/notation)?
+- Want to sing while playing at some point, or leave vocals to Anna?
+- Feedback style: straight and blunt, or gentle and encouraging?
+- Best time of day to practice, and what energy you usually have then
+- Interested in writing your own songs someday?
+- Want to play for other people eventually (friends, open mic), or just for yourselves?
+- What makes practice feel like "us time" instead of a chore?
