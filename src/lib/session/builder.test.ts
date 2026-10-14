@@ -136,3 +136,13 @@ describe("shuffle", () => {
     }
   });
 });
+
+describe("Anna's pick grip", () => {
+  it("checks her pick grip in her first sessions, then rotates it out", () => {
+    const first = buildSession({ ...base, players: ["anna"] });
+    expect(first[0].ref).toContain("pick-grip");
+    const later = buildSession({ ...base, players: ["anna"], recentRefs: Array(6).fill("warmup:prayer+shake-out+chromatic-1234") });
+    expect(later[0].ref).not.toContain("pick-grip");
+    expect(buildSession({ ...base, players: ["ben"] })[0].ref).not.toContain("pick-grip");
+  });
+});

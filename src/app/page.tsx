@@ -4,6 +4,7 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import { useApp } from "@/components/app-provider";
 import { CandyBar } from "@/components/candy-bar";
+import { goalFor, isQuiet } from "@/lib/goals";
 import { WeekDots } from "@/components/week-dots";
 import { PLAYERS, whoLabel } from "@/lib/players";
 import {
@@ -14,7 +15,7 @@ import {
   weekDayKeys,
   weekStreak,
 } from "@/lib/streaks";
-import type { Who } from "@/lib/types";
+import type { PlayerId, Who } from "@/lib/types";
 import { useSessions } from "@/lib/use-sessions";
 import { nextUnlock, UNLOCK_AT } from "@/content/chord-path";
 import { playersFor } from "@/lib/players";
@@ -26,6 +27,12 @@ const OPTIONS: { who: Who; color: string; on: string; sub: string }[] = [
   { who: "anna", color: "var(--anna)", on: "var(--on-anna)", sub: PLAYERS.anna.guitar },
   { who: "both", color: "var(--both)", on: "var(--on-both)", sub: "Together" },
 ];
+
+/** The player's best chord-change score, for players who'd rather not see streaks. */
+function personalBest(bests: Record<string, number>): { pair: string; value: number } | null {
+  const top = Object.entries(bests).sort((a, b) => b[1] - a[1])[0];
+  return top ? { pair: top[0].replace("-", " ⇄ "), value: top[1] } : null;
+}
 
 function timeOfDay(d: Date): string {
   const h = d.getHours();
@@ -43,7 +50,6 @@ export default function Home() {
   const now = new Date();
   const keys = weekDayKeys(now);
   const today = dayKey(now);
-  const target = settings.weeklyTargetDays;
   const active = settings.activeWho;
 
   return (
@@ -57,7 +63,10 @@ export default function Home() {
               ? togetherDays(sessions, settings.minMinutesPerDay)
               : practiceDays(sessions, who, settings.minMinutesPerDay);
           const count = daysThisWeek(days, now);
+          const target = goalFor(settings, who);
           const streak = weekStreak(days, now, target);
+          const quiet = isQuiet(settings, who);
+          const pb = quiet ? personalBest(changeBests[who as PlayerId] ?? {}) : null;
           const selected = active === who;
           const unlock = nextUnlock(groupBests(playersFor(who), changeBests));
           return (
@@ -108,17 +117,31 @@ export default function Home() {
                     </span>
                   )}
                 </span>
-                <span className="flex items-end gap-6 sm:flex-col sm:items-end sm:gap-3">
-                  <WeekDots keys={keys} played={days} today={today} color={selected ? on : color} />
-                  <span className="num text-sm text-ink-dim">
-                    {count} of {target} this week
-                    {streak > 0 && (
-                      <span className="text-ink-faint">
-                        , {streak} {streak === 1 ? "week" : "weeks"} in a row
-                      </span>
+                {quiet ? (
+                  <span className="text-sm text-ink-dim sm:text-right">
+                    {pb ? (
+                      <>
+                        Personal best
+                        <span className="display num mt-1 block text-3xl text-ink">{pb.value}</span>
+                        {pb.pair} changes a minute
+                      </>
+                    ) : (
+                      "Personal bests show up here as you play."
                     )}
                   </span>
-                </span>
+                ) : (
+                  <span className="flex items-end gap-6 sm:flex-col sm:items-end sm:gap-3">
+                    <WeekDots keys={keys} played={days} today={today} color={selected ? on : color} />
+                    <span className="num text-sm text-ink-dim">
+                      {count} of {target} this week
+                      {streak > 0 && (
+                        <span className="text-ink-faint">
+                          , {streak} {streak === 1 ? "week" : "weeks"} in a row
+                        </span>
+                      )}
+                    </span>
+                  </span>
+                )}
               </button>
             </li>
           );

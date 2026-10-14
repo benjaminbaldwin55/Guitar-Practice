@@ -19,6 +19,7 @@ updated: 2026-10-12
 - **Pedals:** Boss DS-1 (distortion), Boss RC-1 (looper), Donner Yellow Fall (delay), wah (works intermittently)
 - Also owns: Gretsch G5232 Electromatic, Yamaha acoustic
 - Right-handed. Learning on electric first because it's easier on the fingers.
+- Pick and fingers: wants both
 
 ## Taste
 - **Artists:** Alice in Chains, Days of the New, Stone Temple Pilots, Brothers Osborne, The Wallflowers, Live, Candlebox, Nirvana, Smashing Pumpkins, Foo Fighters, John Mayer
@@ -44,7 +45,6 @@ updated: 2026-10-12
 - **With Anna:** cooperative, not competitive. Hopes to practice together most of the time.
 
 ## Still to ask Ben (added when Anna got her questionnaire)
-- Pick, fingers, or both? Any preference yet?
 - Learn better by ear, by watching someone, or by reading (tab/notation)?
 - Want to sing while playing at some point, or leave vocals to Anna?
 - Feedback style: straight and blunt, or gentle and encouraging?

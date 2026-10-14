@@ -1,33 +1,57 @@
 ---
 name: Anna
 id: anna
-updated: 2026-10-12
-status: waiting on Anna's answers
+updated: 2026-10-14
 ---
 
 # Anna
 
-## Known so far
-- Beginner, starting from the basics with Ben
-- Sings. Played piano and violin growing up.
-  - Violin means fretting-hand instincts and intonation awareness
-  - Piano and violin probably mean she can read music. Confirm.
-  - Singing opens up the duo: Ben plays, Anna sings, and eventually she sings while playing
-- **Guitar:** Schecter PT Special (Tele-style electric, purple burst)
-- **Amp and pedals:** shares Ben's THR10II and pedals
-- Right-handed
+## Background
+- Played guitar briefly about two years ago, then stopped. Mostly forgotten,
+  but she remembers how to pluck and a few chords.
+- Used to play and sing along to "The Night We Met" (Lord Huron). Could play
+  the beginning of a Laufey song.
+- Needs help holding a pick correctly.
+- Piano and violin through her childhood and teens. **Reads sheet music.**
+  Weekly hour-long lessons for each, a month or two per piece until
+  mastered, 30 min a day of practice plus scales, exercises and etudes.
+- Sings for fun all the time. Wants to sing while she plays.
+- Vocal range: comfortable in the middle. Good fits for her voice:
+  "Baby It's Cold Outside", "The End of the World" (Sharon Van Etten).
 
-## Still to ask (answers go in her own words)
-- Played guitar before? What can she already do?
-- How much piano and violin does she remember? Can she still read music?
-- Sings for fun or trained? Wants to sing while playing eventually?
-- A few dream songs, and a few to learn soon
-- Favorite artists and genres
-- A year from now, what makes her feel "I can play guitar"?
-- Structured lessons, songs first, or a mix?
-- What makes her lose interest?
-- Do stats and streaks motivate her or stress her out?
-- From piano and violin: what kind of teaching worked, and what didn't?
-- Minutes per day, days per week
-- Any hand, wrist, or finger issues
-- Together vs. solo practice, duo songs, competition vs. cooperation
+## Gear
+- **Guitar:** Schecter PT Special (Tele-style electric, purple burst)
+- Shares Ben's THR10II and pedals
+- Right-handed
+- Pick and fingers: wants both
+- Keeps her nails long right now; would keep them short if she gets serious
+
+## Taste
+- **Genres:** folk, indie pop
+- **Artists:** Olivia Rodrigo, Lord Huron, Fleet Foxes, Laufey
+- Learns best **by ear**, then by watching someone
+
+## Goals
+- Strum and sing at the same time without thinking about it
+- Switch chords quickly
+- Write music by ear
+- Songwriting someday "would be cool"
+- Plays for herself, not for an audience
+- **First songs:** Moon Song (Karen O), Yellow (Coldplay), Cigarette Smoke
+  (Olivia Rodrigo)
+
+## Schedule
+- 30 min, 4 to 5 times a week
+- After dinner. Not much energy by then, but she still wants to do it.
+
+## Physical
+- No hand, wrist or finger issues
+
+## Motivation
+- **Loses interest when:** it's too hard or too monotonous
+- **Stats and streaks:** turn them down. Personal progress matters most.
+- **Prefers:** jumping into songs, but knows lessons help technique, so a mix
+- **Feedback:** straight, not sugarcoated
+- **With Ben:** purely cooperative. Practicing together is more ad hoc;
+  it can feel awkward. Best "us time" is learning a new concept that
+  challenges both of them, so they can bounce ideas off each other.

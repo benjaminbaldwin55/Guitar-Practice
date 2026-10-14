@@ -9,6 +9,15 @@ import {
   type Backup,
 } from "@/lib/store/backup";
 import { dayKey } from "@/lib/streaks";
+import { goalFor, isQuiet } from "@/lib/goals";
+import { PLAYERS } from "@/lib/players";
+import { Chip } from "@/components/ui";
+
+const GOAL_ROWS: { who: "ben" | "anna" | "both"; label: string }[] = [
+  { who: "ben", label: "Ben" },
+  { who: "anna", label: "Anna" },
+  { who: "both", label: "Together" },
+];
 
 type Status = { kind: "ok" | "error"; text: string } | null;
 
@@ -96,40 +105,64 @@ export default function SettingsPage() {
     }
   }
 
-  const target = settings.weeklyTargetDays;
-
   return (
     <div>
       <h1 className="display text-[clamp(2.5rem,6vw,4.5rem)]">Settings</h1>
 
       <div className="mt-10">
-        <Section title="Weekly goal">
+        <Section title="Weekly goals">
           <p className="text-ink-dim">
-            Days a week you each aim to play. Rest days never break a streak,
-            only missed weeks do.
+            Days a week each of you aims to play, and how often you play
+            together. Rest days never break a streak, only missed weeks do.
           </p>
-          <div className="mt-4 flex items-center gap-3">
-            <button
-              type="button"
-              className={btnQuiet}
-              onClick={() => updateSettings({ weeklyTargetDays: target - 1 })}
-              disabled={target <= 2}
-              aria-label="One fewer day"
-            >
-              −
-            </button>
-            <span className="num w-28 text-center text-lg">
-              {target} days
-            </span>
-            <button
-              type="button"
-              className={btnQuiet}
-              onClick={() => updateSettings({ weeklyTargetDays: target + 1 })}
-              disabled={target >= 7}
-              aria-label="One more day"
-            >
-              +
-            </button>
+          <ul className="mt-5 space-y-4">
+            {GOAL_ROWS.map(({ who, label }) => {
+              const value = goalFor(settings, who);
+              const set = (v: number) => updateSettings({ goals: { ...settings.goals, [who]: v } });
+              return (
+                <li key={who} className="flex flex-wrap items-center gap-3">
+                  <span className="w-24 font-bold" style={{ color: `var(--${who})` }}>
+                    {label}
+                  </span>
+                  <button type="button" className={btnQuiet} onClick={() => set(value - 1)} disabled={value <= 1} aria-label={`${label}: one fewer day`}>
+                    −
+                  </button>
+                  <span className="num w-24 text-center text-lg">
+                    {value} {value === 1 ? "day" : "days"}
+                  </span>
+                  <button type="button" className={btnQuiet} onClick={() => set(value + 1)} disabled={value >= 7} aria-label={`${label}: one more day`}>
+                    +
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </Section>
+
+        <Section title="Streaks and counts">
+          <p className="text-ink-dim">
+            Some people love streaks, some find them stressful. Turn them off
+            and you&apos;ll see personal bests instead. Achievements stay either way.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            {(["ben", "anna"] as const).map((p) => {
+              const quiet = isQuiet(settings, p);
+              return (
+                <Chip
+                  key={p}
+                  on={!quiet}
+                  onClick={() =>
+                    updateSettings({
+                      quietStats: quiet
+                        ? settings.quietStats.filter((x) => x !== p)
+                        : [...settings.quietStats, p],
+                    })
+                  }
+                >
+                  {PLAYERS[p].name}: streaks {quiet ? "off" : "on"}
+                </Chip>
+              );
+            })}
           </div>
         </Section>
 

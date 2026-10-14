@@ -145,6 +145,15 @@ export const FUN: FunIdea[] = [
     watch: { label: "E minor backing track", query: "E minor backing track slow rock" },
   },
   {
+    id: "strum-and-hum",
+    title: "Strum and hum",
+    how: "Em to G, two bars each, down-up eighths. Round 1: just strum. Round 2: count 1 & 2 & out loud. Round 3: hum any melody. Round 4: sing anything, even nonsense. If the strum falls apart, drop back a round.",
+    needs: ["Em", "G"],
+    chill: true,
+    solo: true,
+    watch: { label: "Singing while strumming tips", query: "how to sing and play guitar at the same time beginner" },
+  },
+  {
     id: "tone-tweak",
     title: "Tone hunt",
     how: "Strum one chord you love and play with the THR10II and the Yellow Fall delay until it sounds like a record you like. Snap a photo of the knobs.",

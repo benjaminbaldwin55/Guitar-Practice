@@ -13,6 +13,8 @@ export interface SongIdea {
   level: 1 | 2 | 3; // 1 easy, 2 a stretch, 3 a goal
   kind: "riff" | "chords" | "picking";
   why: string;
+  /** Also suggest it for together sessions. */
+  duo?: boolean;
 }
 
 export const SONG_IDEAS: SongIdea[] = [
@@ -32,7 +34,15 @@ export const SONG_IDEAS: SongIdea[] = [
   { title: "Slow Dancing in a Burning Room", artist: "John Mayer", for: "ben", level: 3, kind: "chords", why: "Bluesy and smooth. The licks build on the pentatonic boxes." },
   { title: "Stay a Little Longer", artist: "Brothers Osborne", for: "ben", level: 3, kind: "riff", why: "The big goal. Peek at it now and then to see how close you're getting." },
 
-  // Together: easy sing-alongs until Anna picks her own songs
+  // Anna: folk and indie pop. Her three picks first.
+  { title: "Moon Song", artist: "Karen O", for: "anna", level: 1, kind: "chords", why: "Your pick. Quiet and simple, made for singing over." },
+  { title: "Yellow", artist: "Coldplay", for: "anna", level: 2, kind: "chords", why: "Your pick. Big ringing chords to sing over once changes are quick.", duo: true },
+  { title: "Cigarette Smoke", artist: "Olivia Rodrigo", for: "anna", level: 2, kind: "chords", why: "Your pick. Look for a beginner version first." },
+  { title: "The Night We Met", artist: "Lord Huron", for: "anna", level: 1, kind: "chords", why: "You've played and sung this before. Welcome back to it.", duo: true },
+  { title: "White Winter Hymnal", artist: "Fleet Foxes", for: "anna", level: 1, kind: "chords", why: "A round that's all about the singing, over a steady strum." },
+  { title: "traitor", artist: "Olivia Rodrigo", for: "anna", level: 2, kind: "chords", why: "Gentle strumming with lots of room for your voice." },
+
+  // Together: easy sing-alongs, plus duo picks above
   { title: "Knockin' on Heaven's Door", artist: "Bob Dylan", for: "both", level: 1, kind: "chords", why: "Four easy open chords, slow, and made for singing along." },
   { title: "Horse with No Name", artist: "America", for: "both", level: 1, kind: "chords", why: "Two chord shapes the whole song. One plays, one sings." },
   { title: "Free Fallin'", artist: "Tom Petty", for: "both", level: 2, kind: "chords", why: "A classic to sing together. Uses a capo." },
@@ -48,6 +58,6 @@ export function songLesson(s: SongIdea): string {
 
 /** Songs that fit who's playing, easiest first. */
 export function songsFor(who: Who): SongIdea[] {
-  const list = SONG_IDEAS.filter((s) => s.for === who || s.for === "both");
+  const list = SONG_IDEAS.filter((s) => s.for === who || s.for === "both" || (who === "both" && s.duo));
   return list.sort((a, b) => a.level - b.level);
 }

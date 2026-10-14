@@ -66,6 +66,10 @@ export interface Settings {
   maxSessionMin: number;
   /** Tunings in the tuner's list, most recently used first. */
   tunings: string[];
+  /** Days-a-week goal per player and for together. Falls back to weeklyTargetDays. */
+  goals: Partial<Record<Who, number>>;
+  /** Players who'd rather see personal bests than streaks and weekly counts. */
+  quietStats: PlayerId[];
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -74,4 +78,6 @@ export const DEFAULT_SETTINGS: Settings = {
   minMinutesPerDay: 10,
   maxSessionMin: 40,
   tunings: ["standard", "drop-d", "eb"],
+  goals: { ben: 5, anna: 4, both: 2 },
+  quietStats: ["anna"],
 };

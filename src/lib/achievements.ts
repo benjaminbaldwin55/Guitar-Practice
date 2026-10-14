@@ -2,6 +2,7 @@ import { CHORD_PAIRS, unlockedCount } from "@/content/chord-path";
 import { PROGRESSIONS } from "@/content/drills";
 import { SCALES } from "@/content/scales";
 import { STRUMS } from "@/content/strums";
+import { goalFor } from "./goals";
 import { dayKey, weekStart } from "./streaks";
 import type { Measurement, PlayerId, PracticeSession, Settings } from "./types";
 
@@ -337,8 +338,13 @@ export function historyFor(
   owner: Owner,
   sessions: PracticeSession[],
   measurements: Measurement[],
-  settings: History["settings"],
+  appSettings: History["settings"] & Partial<Pick<Settings, "goals">>,
 ): History {
+  // Each owner's streaks are measured against their own weekly goal.
+  const settings = {
+    minMinutesPerDay: appSettings.minMinutesPerDay,
+    weeklyTargetDays: goalFor(appSettings, owner === "together" ? "both" : owner),
+  };
   const ss = sessions
     .filter((s) => (owner === "together" ? s.players.length > 1 : s.players.includes(owner)))
     .sort((a, b) => a.startedAt.localeCompare(b.startedAt));

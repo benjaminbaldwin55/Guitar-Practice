@@ -37,6 +37,18 @@ Achievements for this track: First lick, 5 / 10 / 25 licks, In-tune bend
 Box 2, All five boxes, First solo over a 12-bar, Licks at 120 BPM,
 Stay a Little Longer solo.
 
+## Anna's track (from her answers, Oct 2026)
+- **Strum and sing without thinking** is her headline goal. A singing
+  ladder: strum without looking, strum while counting, strum while
+  humming, then sing. Strum and hum is the first rung.
+- **Ear first.** She learns by ear, then by watching. Ear training and call
+  and response come early for her, and feed "write music by ear".
+- **Songs fast.** Jumping into songs keeps her going: Moon Song, Yellow and
+  Cigarette Smoke get milestone ladders first when Songs lands.
+- She reads standard notation; worth showing it alongside tab later.
+- Together sessions: built around **one new concept both are learning**,
+  not repeats of solo drills. Ad hoc, a couple of times a week.
+
 ## Stage 1: Foundations (months 0 to 3) ← we are here
 - Open chords: Em, Am, E, A, C, G, D, Dm ✅
 - Chord-change path with unlocks, counted by mic ✅

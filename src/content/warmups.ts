@@ -15,6 +15,7 @@ export const WARMUPS: WarmupStep[] = [
   { id: "forearm-flex", kind: "stretch", title: "Forearm stretch", seconds: 40, how: "Arm straight out, palm up. Gently pull the fingers back with your other hand for 15 seconds. Then palm down. Switch arms." },
   { id: "shake-out", kind: "stretch", title: "Shake it out", seconds: 20, how: "Drop your arms and shake your hands loose. Roll your shoulders back a few times." },
 
+  { id: "pick-grip", kind: "fingers", title: "Pick grip check", seconds: 60, how: "Pick flat on the side of your index finger, thumb on top, only a few millimeters of tip showing. Grip just tight enough that it doesn't slip. Strum the open strings slowly and check it hasn't twisted." },
   { id: "chromatic-1234", kind: "fingers", title: "Spider walk 1-2-3-4", seconds: 90, how: "Frets 1, 2, 3, 4 on the low E with fingers 1, 2, 3, 4. Then the A string, all the way to high e and back. One finger per fret, slow and clean." },
   { id: "chromatic-1324", kind: "fingers", title: "Spider walk 1-3-2-4", seconds: 90, how: "Same idea, scrambled: frets 1, 3, 2, 4. Wakes up the ring and pinky." },
   { id: "chromatic-up-neck", kind: "fingers", title: "Spider walk at fret 5", seconds: 90, how: "1-2-3-4 starting at fret 5, where the frets are closer together. Easier on the stretch." },

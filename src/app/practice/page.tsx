@@ -24,6 +24,7 @@ import { dayKey, daysThisWeek, practiceDays } from "@/lib/streaks";
 import type { Energy, Feel, PracticeSession } from "@/lib/types";
 import { bestsOf, lastTempos, useMeasurements } from "@/lib/use-measurements";
 import { useSessions } from "@/lib/use-sessions";
+import { goalFor, isQuiet } from "@/lib/goals";
 import { Sticker } from "@/components/sticker";
 import { evaluate, historyFor, newlyUnlocked, type AchievementState, type Owner } from "@/lib/achievements";
 import { ownerColor } from "@/lib/use-achievements";
@@ -401,9 +402,16 @@ export default function PracticePage() {
               .filter((s) => s.players.includes(p) && dayKey(new Date(s.startedAt)) === dayKey(new Date()))
               .reduce((m, s) => m + s.minutes, 0);
             const short = settings.minMinutesPerDay - todayMin;
+            if (isQuiet(settings, p)) {
+              return (
+                <li key={p}>
+                  <b style={{ color: `var(--${p})` }}>{PLAYERS[p].name}</b>: {saved.minutes} minutes in.
+                </li>
+              );
+            }
             return (
               <li key={p}>
-                <b style={{ color: `var(--${p})` }}>{PLAYERS[p].name}</b>: {n} of {settings.weeklyTargetDays} days this week
+                <b style={{ color: `var(--${p})` }}>{PLAYERS[p].name}</b>: {n} of {goalFor(settings, p)} days this week
                 {short > 0 && (
                   <span className="block text-base text-ink-dim">
                     Play {short} more minute{short === 1 ? "" : "s"} today and it counts.

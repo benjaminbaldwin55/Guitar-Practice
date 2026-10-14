@@ -61,6 +61,11 @@ vary every session, keep a milestone 1 or 2 sessions away, measure things.
   on measured drills (one mic can't tell two guitars apart).
 - If the last session was marked "something hurt", the next one defaults
   to 10 minutes, low energy.
+- Goals are per player (`settings.goals`: Ben 5, Anna 4, together 2) via
+  `goalFor()`. Anna has streaks turned down (`settings.quietStats`): show her
+  personal bests, never weekly counts or streaks. Use `isQuiet()`.
+- Anna's first sessions check her pick grip (builder adds the `pick-grip`
+  warm-up until she has 5 warm-ups in recent history).
 - Every block has one set of controls at the top (Back, Pause, Next). Don't
   add a second timer or pause inside a block.
 - Fun block: the idea, a how-to/backing-track link, two swaps, and "Or play

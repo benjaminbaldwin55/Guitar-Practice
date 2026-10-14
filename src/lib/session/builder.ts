@@ -135,7 +135,11 @@ export function buildSession(input: BuildInput): PlannedBlock[] {
   const f1 = shuffle(rand, fingers).sort(
     (a, b) => Number(recentWarm.includes(a.id)) - Number(recentWarm.includes(b.id)),
   );
-  const steps = [s1[0], s1[1], f1[0]];
+  // Anna asked for help holding a pick: check it in her first few sessions.
+  const warmupsSoFar = recentRefs.filter((r) => r.startsWith("warmup:")).length;
+  const pickCheck = players.includes("anna") && warmupsSoFar < 5;
+  const fingerStep = pickCheck ? WARMUPS.find((w) => w.id === "pick-grip")! : f1.filter((w) => w.id !== "pick-grip")[0];
+  const steps = [s1[0], s1[1], fingerStep];
   blocks.push({
     kind: "warmup",
     title: "Warm-up",
