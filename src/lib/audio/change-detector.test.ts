@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CHORDS } from "../music/chords";
 import { chromaOf } from "../music/chroma";
-import { ChangeDetector } from "./change-detector";
+import { Calibrator, ChangeDetector } from "./change-detector";
 
 const SR = 48000;
 const OPEN = [40, 45, 50, 55, 59, 64];
@@ -94,5 +94,73 @@ describe("ChangeDetector", () => {
     let seed = 1;
     const noise = Float32Array.from({ length: SR * 5 }, () => ((seed = (seed * 16807) % 2147483647) / 2147483647 - 0.5) * 0.0008);
     expect(count(["Em", "G"], noise)).toBe(0);
+  });
+});
+
+/** What a real laptop mic sends: dead zeros while it starts, then room hiss. */
+function hiss(seconds: number, rms: number, seed = 7): Float32Array {
+  let x = seed;
+  const r = () => (x = (x * 16807) % 2147483647) / 2147483647 - 0.5;
+  return Float32Array.from({ length: Math.floor(SR * seconds) }, () => r() * rms * 3.46);
+}
+
+function concat(...parts: Float32Array[]): Float32Array {
+  const out = new Float32Array(parts.reduce((n, p) => n + p.length, 0));
+  let o = 0;
+  for (const p of parts) {
+    out.set(p, o);
+    o += p.length;
+  }
+  return out;
+}
+
+function mix(a: Float32Array, b: Float32Array): Float32Array {
+  const out = new Float32Array(a);
+  for (let i = 0; i < out.length; i++) out[i] += b[i % b.length];
+  return out;
+}
+
+const HOP = 2400; // 50ms at 48k, like the app
+
+describe("Calibrator in a real room", () => {
+  const roomRms = 0.004;
+  const strumAt = 0.3 + 1.5; // zeros, then 1.5s of hiss, then the strum
+
+  function calibrateFrom(det: ChangeDetector, chord: string) {
+    const strum = performance([chord, chord], { changes: 0, gain: 0.1, restrum: false });
+    const audio = concat(new Float32Array(SR * 0.3), mix(concat(hiss(1.5, roomRms), strum), hiss(1, roomRms, 3)));
+    const cal = new Calibrator(det);
+    for (let s = 0; s + 8192 < audio.length; s += HOP) {
+      const state = cal.push(audio.subarray(s, s + 8192), SR);
+      if (state === "done") return { cal, doneAt: (s + 8192) / SR };
+    }
+    return { cal, doneAt: null };
+  }
+
+  it("waits for the strum instead of learning the room hiss", () => {
+    const det = new ChangeDetector(["Em", "G"]);
+    const { doneAt } = calibrateFrom(det, "Em");
+    expect(doneAt).not.toBeNull();
+    expect(doneAt!).toBeGreaterThan(strumAt);
+    expect(det.noise).toBeGreaterThan(roomRms * 0.5);
+    expect(det.noise).toBeLessThan(roomRms * 2);
+  });
+
+  it("then counts every change over the same hiss", () => {
+    const det = new ChangeDetector(["Em", "G"]);
+    for (const side of [0, 1] as const) det.calibrate(side, calibrateFrom(det, ["Em", "G"][side]).cal.frames);
+    const take = mix(performance(["Em", "G"], { changes: 30, gain: 0.1, restrum: false }), hiss(3, roomRms, 11));
+    det.restartCount();
+    for (let s = 0; s + 8192 < take.length; s += HOP) det.push(take.subarray(s, s + 8192), SR, ((s + 8192) / SR) * 1000);
+    expect(det.count).toBe(30);
+  });
+
+  it("never counts room hiss alone", () => {
+    const det = new ChangeDetector(["Em", "G"]);
+    calibrateFrom(det, "Em");
+    const room = hiss(20, roomRms * 1.5, 5);
+    det.restartCount();
+    for (let s = 0; s + 8192 < room.length; s += HOP) det.push(room.subarray(s, s + 8192), SR, ((s + 8192) / SR) * 1000);
+    expect(det.count).toBe(0);
   });
 });

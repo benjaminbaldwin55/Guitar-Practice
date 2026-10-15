@@ -69,6 +69,7 @@ export function ChangeCounter({
   async function start(recalibrate = false) {
     const ok = await counter.openMic();
     if (!ok) return countdown(); // no mic: count in your head
+    counter.startRecording();
     if (recalibrate) counter.forgetCalibration();
     if (recalibrate || !counter.isCalibrated()) {
       setPhase("calibrate");
@@ -135,6 +136,16 @@ export function ChangeCounter({
     await onSave(r);
     setResult(r);
     setPhase("saved");
+  }
+
+  function downloadTake() {
+    const wav = counter.takeWav();
+    if (!wav) return;
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(wav);
+    a.download = `changes-${id}-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-")}.wav`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   }
 
   function next() {
@@ -215,14 +226,22 @@ export function ChangeCounter({
 
       {phase === "calibrate" && (
         <div className="mt-8 text-center">
-          <p className="display text-4xl" style={{ color }}>
-            Strum {pair[calSide]} once
-          </p>
+          {counter.calState === "listening-to-room" ? (
+            <p className="display text-4xl text-ink-dim">Hold still a sec</p>
+          ) : counter.calState === "ringing" ? (
+            <p className="display text-4xl text-good">Got it, let it ring</p>
+          ) : (
+            <p className="display text-4xl" style={{ color }}>
+              Strum {pair[calSide]} once
+            </p>
+          )}
           <p className="mt-3 text-ink-dim">
-            Let it ring for a second. This teaches the app how your guitar sounds.
+            {counter.calState === "listening-to-room"
+              ? "Listening to the room so it knows what quiet sounds like."
+              : "One full strum, then let it ring. This teaches the app how your guitar sounds."}
           </p>
           {calMissed && <p className="mt-2 text-live">Didn&apos;t catch the last one. Using the standard sound for it.</p>}
-          <MicMeter level={counter.level} />
+          <MicMeter level={counter.level} gate={counter.gate} />
         </div>
       )}
 
@@ -242,7 +261,12 @@ export function ChangeCounter({
           </div>
           <CandyBar value={left} max={SECONDS} color={color} size="lg" className="mx-auto mt-4 max-w-xl" label="Time left" />
           <p className="num mt-2 text-lg font-semibold">{left}s</p>
-          {counter.mic === "on" && <MicMeter level={counter.level} />}
+          {counter.mic === "on" && (
+            <>
+              <MicMeter level={counter.level} gate={counter.gate} />
+              <Hears pair={pair} sims={counter.sims} hearing={counter.hearing} color={color} />
+            </>
+          )}
           <Button className="mt-4" variant="ghost" onClick={finish}>
             Stop early
           </Button>
@@ -273,6 +297,17 @@ export function ChangeCounter({
               Redo
             </Button>
           </div>
+          {counter.mic === "on" && (
+            <div className="mx-auto mt-8 max-w-xl text-left">
+              <Timeline pair={pair} points={counter.timeline()} color={color} />
+              <p className="mt-3 text-sm text-ink-dim">
+                Count way off? Save the recording so the counter can be tuned to your guitar.{" "}
+                <button className="font-bold text-ink underline underline-offset-2" onClick={downloadTake}>
+                  Save recording
+                </button>
+              </p>
+            </div>
+          )}
         </div>
       )}
 
@@ -326,14 +361,97 @@ export function ChangeCounter({
   );
 }
 
-function MicMeter({ level }: { level: number }) {
-  const pct = Math.min(100, Math.sqrt(level) * 220);
+const meterPct = (level: number) => Math.min(100, Math.sqrt(level) * 220);
+
+/** Mic level, with a notch where it starts counting as guitar instead of room. */
+function MicMeter({ level, gate }: { level: number; gate?: number }) {
+  const over = gate !== undefined && level > gate;
   return (
     <div className="mx-auto mt-4 flex max-w-xs items-center gap-2 text-xs text-ink-dim">
       <span>Mic</span>
-      <div className="h-2 flex-1 rounded-full bg-surface-2">
-        <div className="h-full rounded-full bg-ink" style={{ width: `${pct}%` }} />
+      <div className="relative h-2 flex-1 rounded-full bg-surface-2">
+        <div
+          className={`h-full rounded-full ${over ? "bg-good" : "bg-ink-faint"}`}
+          style={{ width: `${meterPct(level)}%` }}
+        />
+        {gate !== undefined && gate > 0 && (
+          <div className="absolute -top-1 h-4 w-0.5 bg-ink" style={{ left: `${meterPct(gate)}%` }} title="Guitar starts here" />
+        )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Live: which way the sound leans. Raw match scores for two chords are
+ * always close, so this shows the difference: a dot that slides toward the
+ * chord it hears and lights up once it's sure.
+ */
+function Hears({
+  pair,
+  sims,
+  hearing,
+  color,
+}: {
+  pair: [string, string];
+  sims: [number, number] | null;
+  hearing: 0 | 1 | null;
+  color: string;
+}) {
+  const lean = sims ? Math.max(-1, Math.min(1, (sims[1] - sims[0]) / 0.12)) : 0;
+  return (
+    <div className="mx-auto mt-3 flex max-w-xs items-center gap-2 text-xs text-ink-dim">
+      <span className={`w-8 text-right font-bold ${hearing === 0 ? "text-ink" : ""}`}>{pair[0]}</span>
+      <div className="relative h-2 flex-1 rounded-full bg-surface-2">
+        <div className="absolute top-0 left-1/2 h-2 w-px bg-ink-faint" />
+        <div
+          className="absolute -top-1 h-4 w-4 -translate-x-1/2 rounded-full border-2 border-ink transition-[left] duration-75"
+          style={{
+            left: `${50 + lean * 50}%`,
+            background: hearing === null ? "var(--surface-2)" : color,
+            opacity: sims ? 1 : 0.3,
+          }}
+        />
+      </div>
+      <span className={`w-8 font-bold ${hearing === 1 ? "text-ink" : ""}`}>{pair[1]}</span>
+    </div>
+  );
+}
+
+/** What it heard over the minute: which chord, and where it counted a change. */
+function Timeline({
+  pair,
+  points,
+  color,
+}: {
+  pair: [string, string];
+  points: { t: number; label: 0 | 1 | null; counted: boolean }[];
+  color: string;
+}) {
+  if (!points.length) return null;
+  const end = Math.max(1000, points.at(-1)!.t);
+  const fill = (l: 0 | 1 | null) => (l === 0 ? color : l === 1 ? "var(--ink)" : "transparent");
+  return (
+    <div>
+      <div className="flex items-center justify-between text-xs text-ink-dim">
+        <span>What it heard</span>
+        <span className="flex gap-3">
+          <span><i className="mr-1 inline-block h-2 w-2 rounded-full" style={{ background: color }} />{pair[0]}</span>
+          <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-ink" />{pair[1]}</span>
+          <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-good" />counted</span>
+        </span>
+      </div>
+      <svg viewBox={`0 0 ${end} 30`} preserveAspectRatio="none" className="mt-1 h-8 w-full rounded-md bg-surface-2">
+        {points.map((p, i) => {
+          const w = (points[i + 1]?.t ?? p.t + 50) - p.t;
+          return p.label === null ? null : <rect key={i} x={p.t} y={4} width={w + 1} height={18} fill={fill(p.label)} />;
+        })}
+        {points
+          .filter((p) => p.counted)
+          .map((p, i) => (
+            <rect key={`c${i}`} x={p.t - end / 600} y={24} width={end / 300} height={6} fill="var(--good)" />
+          ))}
+      </svg>
     </div>
   );
 }

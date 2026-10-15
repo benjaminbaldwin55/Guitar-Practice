@@ -51,6 +51,15 @@ vary every session, keep a milestone 1 or 2 sessions away, measure things.
   the two chords, classifies what's ringing by pitch-class content (chroma),
   and counts only confirmed switches. A one-strum-per-chord calibration
   tunes it to the guitar. Volume barely matters; re-strums never count.
+- Room noise is learned (low percentile of quiet frames, ignoring the dead
+  zeros a mic sends at startup) and then held fixed while counting.
+  `Calibrator` listens to the room, waits for a real strum, skips the pick
+  attack, then keeps about half a second of ringing. Never learn noise or
+  templates from the first frames after the mic opens.
+- Every chord-changes minute records the take (calibration strums
+  included). Review shows a "what it heard" timeline and a Save recording
+  link (WAV). If Ben says the count is off, ask for that file and tune
+  against it before touching thresholds.
 - Tuner uses the McLeod pitch method plus `PitchSmoother`. Don't go back to
   plain autocorrelation: it jumps octaves on low strings and fails with
   distortion. Saved tuning list lives in settings (`tunings`, recent first).
@@ -68,6 +77,10 @@ vary every session, keep a milestone 1 or 2 sessions away, measure things.
   warm-up until she has 5 warm-ups in recent history).
 - Every block has one set of controls at the top (Back, Pause, Next). Don't
   add a second timer or pause inside a block.
+- Session time comes from the wall clock (`src/lib/session/clock.ts`), not
+  timer ticks, so time in a YouTube tab still counts. Past a block's planned
+  time the clock shows overtime (+1:20) and keeps counting. "Free play" is a
+  single count-up block for learning a song or noodling.
 - Fun block: the idea, a how-to/backing-track link, two swaps, and "Or play
   a song" from `src/content/song-ideas.ts` (YouTube lesson searches, never
   hard-coded video links).

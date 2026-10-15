@@ -6,6 +6,8 @@ export interface DetectorFrame {
   /** True on the frame where a change to the other chord is confirmed. */
   counted: boolean;
   level: number;
+  /** How much it sounds like each chord (0 to 1), or null if too quiet to tell. */
+  sims: [number, number] | null;
 }
 
 export interface DetectorOptions {
@@ -18,7 +20,7 @@ export interface DetectorOptions {
 
 const DEFAULTS: DetectorOptions = {
   margin: 0.03,
-  minSimilarity: 0.55,
+  minSimilarity: 0.45,
   stableFrames: 3,
   minGapMs: 250,
   minLevel: 0.0015,
@@ -32,8 +34,10 @@ const DEFAULTS: DetectorOptions = {
  */
 export class ChangeDetector {
   templates: [Chroma, Chroma];
-  private opts: DetectorOptions;
-  private floor = Infinity;
+  readonly opts: DetectorOptions;
+  /** Typical level of the room with nobody playing. 0 until we've heard it. */
+  noise = 0;
+  private roomLevels: number[] = [];
   private run: { label: 0 | 1 | null; n: number } = { label: null, n: 0 };
   private current: 0 | 1 | null = null;
   private lastCountAt = -Infinity;
@@ -52,9 +56,35 @@ export class ChangeDetector {
     this.templates[side] = blend(this.templates[side], normalize(avg));
   }
 
-  /** Start counting from zero (after calibration). */
+  /**
+   * Learn the room's background level from moments with nobody playing.
+   * Uses a low percentile of recent readings, so a strum or two mixed in
+   * doesn't push it up, and ignores the dead-silent frames a mic sends while
+   * it's starting up (those made the old version think the room was
+   * perfectly quiet, so room hiss passed as guitar).
+   */
+  hearRoom(level: number): void {
+    if (level < 1e-6) return;
+    this.roomLevels.push(level);
+    if (this.roomLevels.length > 40) this.roomLevels.shift();
+    const sorted = [...this.roomLevels].sort((a, b) => a - b);
+    this.noise = sorted[Math.floor(sorted.length * 0.25)];
+  }
+
+  /** The level a sound has to beat to count as guitar. */
+  get gate(): number {
+    return Math.max(this.opts.minLevel, this.noise * 3);
+  }
+
+  /** How many room readings we have. */
+  get roomFrames(): number {
+    return this.roomLevels.length;
+  }
+
+  /** Start counting from zero and forget the room. */
   reset(): void {
-    this.floor = Infinity;
+    this.noise = 0;
+    this.roomLevels = [];
     this.run = { label: null, n: 0 };
     this.current = null;
     this.lastCountAt = -Infinity;
@@ -74,15 +104,17 @@ export class ChangeDetector {
     let s = 0;
     for (let i = 0; i < frame.length; i++) s += frame[i] * frame[i];
     const level = Math.sqrt(s / frame.length);
-    // The room's noise floor is the quietest moment we've heard. It never
-    // creeps up while you play, so nonstop strumming can't gate itself out.
-    if (level < this.floor) this.floor = level;
-    return { ok: level > Math.max(this.opts.minLevel, this.floor * 3), level };
+    // The room level is learned before you play and then held fixed, so
+    // nonstop strumming can't gate itself out.
+    return { ok: level > this.gate, level };
+  }
+
+  similarities(chroma: Chroma): [number, number] {
+    return [cosine(chroma, this.templates[0]), cosine(chroma, this.templates[1])];
   }
 
   classify(chroma: Chroma): 0 | 1 | null {
-    const a = cosine(chroma, this.templates[0]);
-    const b = cosine(chroma, this.templates[1]);
+    const [a, b] = this.similarities(chroma);
     if (Math.max(a, b) < this.opts.minSimilarity) return null;
     if (a - b > this.opts.margin) return 0;
     if (b - a > this.opts.margin) return 1;
@@ -91,7 +123,9 @@ export class ChangeDetector {
 
   push(frame: Float32Array, sampleRate: number, tMs: number): DetectorFrame {
     const { ok, level } = this.audible(frame);
-    const label = ok ? this.classify(chromaOf(frame, sampleRate)) : null;
+    const chroma = ok ? chromaOf(frame, sampleRate) : null;
+    const sims = chroma ? this.similarities(chroma) : null;
+    const label = chroma ? this.classify(chroma) : null;
 
     if (label !== null && label === this.run.label) this.run.n++;
     else this.run = { label, n: label === null ? 0 : 1 };
@@ -107,6 +141,67 @@ export class ChangeDetector {
         counted = true;
       }
     }
-    return { label, counted, level };
+    return { label, counted, level, sims };
+  }
+}
+
+export function levelOf(frame: Float32Array): number {
+  let s = 0;
+  for (let i = 0; i < frame.length; i++) s += frame[i] * frame[i];
+  return Math.sqrt(s / frame.length);
+}
+
+export type CalibrationState = "listening-to-room" | "waiting-for-strum" | "ringing" | "done";
+
+/**
+ * Learns one chord's sound from a single strum. Listens to the room first,
+ * waits for a clear jump in level (the strum), skips the pick attack, then
+ * collects about half a second of the chord ringing. If the sound dies too
+ * soon, it waits for another strum.
+ */
+export class Calibrator {
+  frames: Chroma[] = [];
+  state: CalibrationState = "listening-to-room";
+  private skip = 0;
+
+  constructor(
+    private det: ChangeDetector,
+    private need = 10, // frames of ringing to keep (~0.5s at a 50ms hop)
+  ) {
+    if (det.roomFrames >= 6) this.state = "waiting-for-strum";
+  }
+
+  push(frame: Float32Array, sampleRate: number): CalibrationState {
+    const level = levelOf(frame);
+    const { minLevel } = this.det.opts;
+
+    if (this.state === "listening-to-room" || this.state === "waiting-for-strum") {
+      const strum = Math.max(minLevel * 2, this.det.noise * 5);
+      if (this.state === "waiting-for-strum" && level > strum) {
+        this.state = "ringing";
+        this.skip = 2; // skip the pick attack
+        this.frames = [];
+        return this.state;
+      }
+      this.det.hearRoom(level);
+      if (this.det.roomFrames >= 6) this.state = "waiting-for-strum";
+      return this.state;
+    }
+
+    if (this.state === "ringing") {
+      if (level < Math.max(minLevel, this.det.noise * 2.5)) {
+        // Died away. Keep what we got if it's enough, else wait for another strum.
+        if (this.frames.length >= 6) return (this.state = "done");
+        this.frames = [];
+        return (this.state = "waiting-for-strum");
+      }
+      if (this.skip > 0) {
+        this.skip--;
+        return this.state;
+      }
+      this.frames.push(chromaOf(frame, sampleRate));
+      if (this.frames.length >= this.need) this.state = "done";
+    }
+    return this.state;
   }
 }

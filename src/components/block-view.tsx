@@ -27,6 +27,7 @@ export const KIND_LABEL: Record<string, string> = {
   progression: "Progression",
   fun: "Fun",
   break: "Break",
+  free: "Free play",
 };
 
 export function blockLabel(b: PlannedBlock): string {
@@ -185,6 +186,41 @@ function FunBlock({
   );
 }
 
+function FreePlay({ who }: { who: Who }) {
+  const songs = songsFor(who);
+  return (
+    <div className="grid gap-10 lg:grid-cols-[1fr_1.1fr]">
+      <div>
+        <p className="max-w-prose text-xl">
+          Play anything: learn a song off YouTube, work on a riff, noodle.
+          The clock is running the whole time, even while you&apos;re in
+          another tab, and all of it counts.
+        </p>
+        <p className="mt-4 max-w-prose text-ink-dim">
+          Tuner and metronome are up top. Hit Finish when you&apos;re done.
+        </p>
+      </div>
+      <aside className="candy self-start rounded-[min(var(--r),20px)] border-(length:--bw) border-ink bg-surface p-5">
+        <h3 className="text-xl font-black" style={{ fontStretch: "115%" }}>
+          Need an idea?
+        </h3>
+        <ul className="mt-4 space-y-3">
+          {songs.slice(0, 8).map((s) => (
+            <li key={s.title}>
+              <a href={songLesson(s)} target="_blank" rel="noreferrer" className="group block">
+                <span className="font-bold underline decoration-2 underline-offset-4 group-hover:text-ink-dim">
+                  {s.title}
+                </span>{" "}
+                <span className="text-ink-dim">{s.artist}</span> <span aria-hidden>↗</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </aside>
+    </div>
+  );
+}
+
 export function BlockView({
   block,
   players,
@@ -328,6 +364,9 @@ export function BlockView({
 
     case "fun":
       return <FunBlock idea={p.idea} who={who} options={funOptions} seed={seed} onSwap={onSwapFun} />;
+
+    case "free":
+      return <FreePlay who={who} />;
 
     case "break":
       return (

@@ -19,7 +19,8 @@ export type Payload =
   | { type: "scale"; scaleId: string; bpm: number; exercise: string; last?: TempoRun }
   | { type: "progression"; prog: Progression; bpm: number; last?: TempoRun }
   | { type: "fun"; idea: FunIdea }
-  | { type: "break" };
+  | { type: "break" }
+  | { type: "free" };
 
 export interface PlannedBlock extends SessionBlock {
   payload: Payload;
@@ -279,6 +280,11 @@ export function funOptions(players: PlayerId[], bests: BuildInput["bests"]): Fun
   const known = knownChords(groupBests(players, bests));
   const together = players.length > 1;
   return FUN.filter((f) => subset(f.needs, known) && (together ? !f.solo : !f.together));
+}
+
+/** One open-ended block that counts up: learn a song off YouTube, noodle, anything. */
+export function freePlay(): PlannedBlock[] {
+  return [{ kind: "fun", title: "Free play", plannedMin: 0, done: false, ref: "free", payload: { type: "free" } }];
 }
 
 /** Strip the payload before saving. */

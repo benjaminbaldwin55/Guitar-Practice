@@ -10,11 +10,13 @@ import { TunerPanel } from "@/components/tuner-panel";
 import { Button, Chip, PageTitle } from "@/components/ui";
 import { pairId } from "@/content/chord-path";
 import { beep } from "@/lib/audio/beep";
+import { formatClock, WallClock } from "@/lib/session/clock";
 import { useMetronome } from "@/lib/audio/use-metronome";
 import { newId } from "@/lib/ids";
 import { PLAYERS, playersFor, whoLabel } from "@/lib/players";
 import {
   buildSession,
+  freePlay,
   funOptions,
   toSessionBlocks,
   type PlannedBlock,
@@ -116,22 +118,40 @@ export default function PracticePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [players, minutes, energy, changeBests, recentRefs, seed, avoid, !!measurements]);
 
-  // Session clock. Only runs while practicing and not paused.
+  // Session clock, measured from real time so a YouTube tab doesn't eat it.
+  // Runs while practicing and not paused; time goes to the current block.
   useEffect(() => {
     if (stage !== "run" || paused) return;
-    const t = setInterval(() => {
-      setElapsed((e) => e + 1);
-      setBlockTimes((bt) => bt.map((v, i) => (i === idx ? v + 1 : v)));
-    }, 1000);
-    return () => clearInterval(t);
+    const clock = new WallClock();
+    clock.start(Date.now());
+    const add = (d: number) => {
+      if (d <= 0) return;
+      setElapsed((e) => e + d);
+      setBlockTimes((bt) => bt.map((v, i) => (i === idx ? v + d : v)));
+    };
+    const t = setInterval(() => add(clock.tick(Date.now())), 1000);
+    // Catch up the moment you come back to this tab.
+    const onVisible = () => add(clock.tick(Date.now()));
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", onVisible);
+      add(clock.stop(Date.now()));
+    };
   }, [stage, paused, idx]);
 
   const block = blocks[idx];
   const blockElapsed = blockTimes[idx] ?? 0;
+  const countUp = block?.payload.type === "free";
   const blockLeft = block ? block.plannedMin * 60 - blockElapsed : 0;
+  // Beep once when a block's planned time runs out.
+  const beeped = useRef(-1);
   useEffect(() => {
-    if (stage === "run" && block && blockLeft === 0) beep(1046, 350);
-  }, [blockLeft, block, stage]);
+    if (stage === "run" && block && !countUp && blockLeft <= 0 && beeped.current !== idx) {
+      beeped.current = idx;
+      beep(1046, 350);
+    }
+  }, [blockLeft, block, stage, idx, countUp]);
 
   // Set the metronome up for each block.
   useEffect(() => {
@@ -147,11 +167,12 @@ export default function PracticePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx, stage]);
 
-  function start() {
-    setBlocks(plan);
+  function start(toRun: PlannedBlock[] = plan) {
+    beeped.current = -1;
+    setBlocks(toRun);
     setIdx(0);
     setElapsed(0);
-    setBlockTimes(plan.map(() => 0));
+    setBlockTimes(toRun.map(() => 0));
     setTrails({});
     setPaused(false);
     setNewBests([]);
@@ -326,7 +347,7 @@ export default function PracticePage() {
         </ol>
 
         <div className="mt-8 flex flex-wrap gap-3">
-          <Button variant="primary" size="lg" onClick={start} disabled={!plan.length}>
+          <Button variant="primary" size="lg" onClick={() => start()} disabled={!plan.length}>
             Let&apos;s play
           </Button>
           <Button
@@ -338,6 +359,9 @@ export default function PracticePage() {
             }}
           >
             Shuffle
+          </Button>
+          <Button size="lg" variant="ghost" onClick={() => start(freePlay())}>
+            Free play instead
           </Button>
         </div>
       </div>
@@ -476,7 +500,7 @@ export default function PracticePage() {
 
   // ---------- Running ----------
   if (!block) return null;
-  const over = blockLeft <= 0;
+  const over = !countUp && blockLeft <= 0;
   return (
     <div>
       {/* Progress through the blocks */}
@@ -485,7 +509,7 @@ export default function PracticePage() {
           <li
             key={i}
             className={`h-3.5 rounded-full border-2 border-ink ${i < idx ? "bg-action" : i === idx ? "candy-stripes bg-action" : "bg-surface-2"}`}
-            style={{ flexGrow: b.plannedMin }}
+            style={{ flexGrow: Math.max(1, b.plannedMin) }}
             title={b.title}
           />
         ))}
@@ -530,7 +554,9 @@ export default function PracticePage() {
           </h1>
         </div>
         <div className="sm:text-right">
-          <div className={`display num text-6xl ${over ? "text-live" : ""}`}>{over ? "0:00" : fmt(blockLeft)}</div>
+          <div className={`display num text-6xl ${over ? "text-good" : ""}`}>
+            {countUp ? formatClock(blockElapsed) : formatClock(blockLeft)}
+          </div>
           <div className="mt-3 flex gap-2 sm:justify-end">
             <Button onClick={back} disabled={idx === 0} aria-label="Previous block">
               Back
@@ -543,7 +569,7 @@ export default function PracticePage() {
         </div>
       </header>
       {over && (
-        <p className="mt-3 text-right font-semibold">Time&apos;s up. Move on when you&apos;re ready.</p>
+        <p className="mt-3 text-right font-semibold">Planned time&apos;s up. Keep going if you like: overtime counts too.</p>
       )}
       {paused && <p className="mt-3 text-right font-semibold text-live">Paused</p>}
 
